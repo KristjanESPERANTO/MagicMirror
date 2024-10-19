@@ -37,7 +37,7 @@ Thanks to: @bugsounet, @dkallen78, @jargordon, @khassel, @KristjanESPERANTO, @Ma
 
 ### Added
 
-- [compliments] Added support for cron type date/time format entries mm hh DD MM dow (minutes/hours/days/months and day of week) see https://crontab.cronhub.io for construction (#3481)
+- [compliments] Added support for cron type date/time format entries mm hh DD MM dow (minutes/hours/days/months and day of week) see <https://crontab.cronhub.io> for construction (#3481)
 - [core] Check config at every start of MagicMirror² (#3450)
 - [core] Add spelling check (cspell): `npm run test:spelling` and handle spelling issues (#3544)
 - [core] removed `config.paths.vendor` (could not work because `vendor` is hardcoded in `index.html`), renamed `config.paths.modules` to `config.foreignModulesDir`, added variable `MM_CUSTOMCSS_FILE` which - if set - overrides `config.customCss`, added variable `MM_MODULES_DIR` which - if set - overrides `config.foreignModulesDir`, added test for `MM_MODULES_DIR` (#3530)
@@ -466,7 +466,7 @@ Special thanks to the following contributors: @eouia, @khassel, @kolbyjack, @Kri
 
 ### Added
 
-- Added a new config option `httpHeaders` used by helmet (see https://helmetjs.github.io/). You can now set own httpHeaders which will override the defaults in `js/defaults.js` which is useful e.g. if you want to embed MagicMirror into another website (solves #2847).
+- Added a new config option `httpHeaders` used by helmet (see <https://helmetjs.github.io/>). You can now set own httpHeaders which will override the defaults in `js/defaults.js` which is useful e.g. if you want to embed MagicMirror into another website (solves #2847).
 - Show endDate for calendar events when dateHeader is enabled and showEnd is set to true (#2192).
 - Added the notification emitting from the weather module on information updated.
 - Use recommended file extension for YAML files (#2864).
