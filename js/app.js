@@ -13,7 +13,7 @@ const { getEnvVarsAsObj } = require(`${__dirname}/server_functions`);
 
 // Get version number.
 global.version = require(`${__dirname}/../package.json`).version;
-global.mmTestMode = process.env.mmTestMode === "true" ? true : false;
+global.mmTestMode = process.env.mmTestMode === "true";
 Log.log(`Starting MagicMirror: v${global.version}`);
 
 // Log system information.
