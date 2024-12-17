@@ -4,7 +4,7 @@ require("module-alias/register");
 const fs = require("node:fs");
 const path = require("node:path");
 const envsub = require("envsub");
-const Log = require("logger");
+const Log = require("#logger");
 
 const Server = require(`${__dirname}/server`);
 const Utils = require(`${__dirname}/utils`);
