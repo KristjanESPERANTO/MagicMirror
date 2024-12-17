@@ -13,7 +13,8 @@ _This release is scheduled to be released on 2025-01-01._
 
 ### Added
 
-- [core] Add wayland and windows start options to `package.json` (#3594)
+- [core] Add Wayland and Windows start options to `package.json` (#3594)
+- [core] Add Windows install option to `package.json`.
 - [docs] Add step for npm publishing in release process (#3595)
 - [core] Add GitHub workflow to run spellcheck a few days before each release (#3623)
 - [core] Add test flag to `index.html` to pass to module js for test mode detection (needed by #3630)
