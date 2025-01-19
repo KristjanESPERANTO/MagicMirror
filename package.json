@@ -22,6 +22,14 @@
 	"contributors": [
 		"https://github.com/MagicMirrorOrg/MagicMirror/graphs/contributors"
 	],
+	"imports": {
+		"#logger": {
+			"default": "./js/logger.js"
+		},
+		"#node_helper": {
+			"default": "./js/node_helper.js"
+		}
+	},
 	"main": "js/electron.js",
 	"scripts": {
 		"config:check": "node js/check_config.js",
