@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 planned for 2025-07-01
 
+### Added
+
+- [core] Add Windows install option to `package.json`.
+
 ## [2.31.0] - 2025-04-01
 
 Thanks to: @Developer-Incoming, @eltociear, @geraki, @khassel, @KristjanESPERANTO, @MagMar94, @mixasgr, @n8many, @OWL4C, @rejas, @savvadam, @sdetweil.
@@ -68,7 +72,7 @@ Thanks to: @xsorifc28, @HeikoGr, @bugsounet, @khassel, @KristjanESPERANTO, @reja
 
 ### Added
 
-- [core] Add wayland and windows start options to `package.json` (#3594)
+- [core] Add Wayland and Windows start options to `package.json` (#3594)
 - [docs] Add step for npm publishing in release process (#3595)
 - [core] Add GitHub workflow to run spellcheck a few days before each release (#3623)
 - [core] Add test flag to `index.html` to pass to module js for test mode detection (needed by #3630)
