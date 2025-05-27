@@ -31,7 +31,8 @@ planned for 2025-07-01
   - Switch Stylelint config to flat format and simplify Stylelint scripts
 - [workflow] Replace Node.js version v23 with v24 (#3770)
 - [refactor] Replace deprecated constants `fs.F_OK` and `fs.R_OK` (#3789)
-- [refactor] Replace `ansis` with built-in function `util.styleText`
+- [refactor] Replace `ansis` with built-in function `util.styleText` (#3793)
+- [refactor] Simplify the `loadJSON` function in `translator.js` by replacing `XMLHttpRequest` with `fetch` (#3792)
 
 ### Fixed
 
