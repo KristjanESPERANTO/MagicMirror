@@ -28,6 +28,7 @@
 		"install-fonts": "echo \"Installing fonts ...\n\" && cd fonts && npm install --loglevel=error --no-audit --no-fund --no-update-notifier",
 		"install-mm": "npm install --no-audit --no-fund --no-update-notifier --only=prod --omit=dev",
 		"install-mm:dev": "npm install --no-audit --no-fund --no-update-notifier",
+		"install-mm:windows": "cmd /c npm install --ignore-scripts --no-audit --no-fund --no-update-notifier --only=prod --omit=dev && echo 'Installing vendor files ...' && cd vendor && npm install --loglevel=error --no-audit --no-fund --no-update-notifier && echo 'Installing fonts ...' && cd ../fonts && npm install --loglevel=error --no-audit --no-fund --no-update-notifier",
 		"install-vendor": "echo \"Installing vendor files ...\n\" && cd vendor && npm install --loglevel=error --no-audit --no-fund --no-update-notifier",
 		"lint:css": "stylelint 'css/main.css' 'fonts/*.css' 'modules/default/**/*.css' 'vendor/*.css' --fix",
 		"lint:js": "eslint --fix",
