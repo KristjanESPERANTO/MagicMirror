@@ -105,7 +105,7 @@ describe("Updatenotification", () => {
 			const repos = await gitHelper.getRepos();
 			expect(repos).toHaveLength(0);
 
-			const { error } = require("logger");
+			const { error } = require("#logger");
 			expect(error).toHaveBeenCalledWith(`Failed to retrieve repo info for ${moduleName}: Failed to retrieve status`);
 		});
 	});
@@ -144,7 +144,7 @@ describe("Updatenotification", () => {
 			const repos = await gitHelper.getRepos();
 			expect(repos).toHaveLength(0);
 
-			const { error } = require("logger");
+			const { error } = require("#logger");
 			expect(error).toHaveBeenCalledWith(`Failed to retrieve repo info for ${moduleName}: Failed to retrieve status`);
 		});
 	});
@@ -185,7 +185,7 @@ describe("Updatenotification", () => {
 			const repos = await gitHelper.getRepos();
 			expect(repos).toHaveLength(0);
 
-			const { error } = require("logger");
+			const { error } = require("#logger");
 			expect(error).toHaveBeenCalledWith(`Failed to retrieve repo info for ${moduleName}: Failed to retrieve status`);
 		});
 	});
@@ -226,7 +226,7 @@ describe("Updatenotification", () => {
 			const repos = await gitHelper.getRepos();
 			expect(repos).toHaveLength(0);
 
-			const { error } = require("logger");
+			const { error } = require("#logger");
 			expect(error).toHaveBeenCalledWith(`Failed to retrieve repo info for ${moduleName}: Failed to retrieve status`);
 		});
 	});
