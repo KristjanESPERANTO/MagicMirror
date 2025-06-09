@@ -6,10 +6,10 @@ const express = require("express");
 const ipfilter = require("express-ipfilter").IpFilter;
 const helmet = require("helmet");
 const socketio = require("socket.io");
-const Log = require("logger");
 const { cors, getConfig, getHtml, getVersion, getStartup, getEnvVars } = require("./server_functions");
 
 const vendor = require(`${__dirname}/vendor`);
+const Log = require("#logger");
 
 /**
  * Server
