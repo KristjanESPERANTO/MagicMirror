@@ -77,7 +77,7 @@ describe("Clock module", () => {
 			await helpers.getDocument();
 		});
 
-		it("should not show the time when digital clock is shown", async () => {
+		it("should not show the time when digital clock is shown", () => {
 			const elem = document.querySelector(".clock .digital .time");
 			expect(elem).toBeNull();
 		});
@@ -164,7 +164,7 @@ describe("Clock module", () => {
 			await helpers.getDocument();
 		});
 
-		it("should show the analog clock face", async () => {
+		it("should show the analog clock face", () => {
 			const elem = helpers.waitForElement(".clock-circle");
 			expect(elem).not.toBeNull();
 		});
