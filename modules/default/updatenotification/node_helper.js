@@ -1,9 +1,9 @@
 const fs = require("node:fs");
 const path = require("node:path");
-const NodeHelper = require("node_helper");
 const defaultModules = require("../defaultmodules");
 const GitHelper = require("./git_helper");
 const UpdateHelper = require("./update_helper");
+const NodeHelper = require("#node_helper");
 
 const ONE_MINUTE = 60 * 1000;
 
