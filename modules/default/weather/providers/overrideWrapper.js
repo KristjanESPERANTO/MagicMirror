@@ -69,7 +69,7 @@ const OverrideWrapper = Class.extend({
 	updateAvailable () {
 		this.baseProvider.updateAvailable();
 	},
-	async fetchData (url, type = "json", requestHeaders = undefined, expectedResponseHeaders = undefined) {
+	fetchData (url, type = "json", requestHeaders = undefined, expectedResponseHeaders = undefined) {
 		this.baseProvider.fetchData(url, type, requestHeaders, expectedResponseHeaders);
 	},
 
