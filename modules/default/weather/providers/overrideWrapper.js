@@ -69,6 +69,7 @@ const OverrideWrapper = Class.extend({
 	updateAvailable () {
 		this.baseProvider.updateAvailable();
 	},
+	// eslint-disable-next-line require-await
 	async fetchData (url, type = "json", requestHeaders = undefined, expectedResponseHeaders = undefined) {
 		this.baseProvider.fetchData(url, type, requestHeaders, expectedResponseHeaders);
 	},

@@ -44,6 +44,7 @@ const Module = Class.extend({
 	/**
 	 * Called when the module is started.
 	 */
+	// eslint-disable-next-line require-await
 	async start () {
 		Log.info(`Starting module: ${this.name}`);
 	},
