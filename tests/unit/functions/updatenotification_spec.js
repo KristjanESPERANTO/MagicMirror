@@ -28,7 +28,7 @@ describe("Updatenotification", () => {
 	let gitFetchErr;
 	let gitTagListOut;
 
-	beforeAll(async () => {
+	beforeAll(() => {
 		const { promisify } = require("node:util");
 		promisify.mockReturnValue(execMock);
 
@@ -65,7 +65,7 @@ describe("Updatenotification", () => {
 		});
 	});
 
-	afterEach(async () => {
+	afterEach(() => {
 		gitHelper.gitRepos = [];
 
 		jest.clearAllMocks();
