@@ -7,7 +7,7 @@ const Translator = (function () {
 	 * @param {string} file Path of the file we want to load.
 	 * @returns {Promise<object>} the translations in the specified file
 	 */
-	async function loadJSON (file) {
+	function loadJSON (file) {
 		const xhr = new XMLHttpRequest();
 		return new Promise(function (resolve) {
 			xhr.overrideMimeType("application/json");

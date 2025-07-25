@@ -1,7 +1,7 @@
 const fs = require("node:fs");
 const helpers = require("../helpers/global-setup");
 
-const runTests = async () => {
+const runTests = () => {
 	describe("Default configuration", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/newsfeed/default.js");

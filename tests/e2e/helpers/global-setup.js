@@ -18,7 +18,7 @@ var cssData = [];
 exports.startApplication = async (configFilename, exec) => {
 	jest.resetModules();
 	if (global.app) {
-		await this.stopApplication();
+		await exports.stopApplication();
 	}
 	// Set config sample for use in test
 	if (configFilename === "") {
@@ -34,19 +34,38 @@ exports.startApplication = async (configFilename, exec) => {
 	return global.app.start();
 };
 
+/**
+ * Stops the application and cleans up global resources.
+ * Closes the global window, stops the app if it has a stop method,
+ * and deletes references to global.app, global.window, and global.document.
+ * @param {number} [waitTime] - Time in milliseconds to wait after closing the window to ensure cleanup.
+ */
 exports.stopApplication = async (waitTime = 10) => {
-	if (global.window) {
-		// no closing causes jest errors and memory leaks
-		global.window.close();
-		delete global.window;
-		// give above closing some extra time to finish
-		await new Promise((resolve) => setTimeout(resolve, waitTime));
+	try {
+		if (global.window) {
+			// no closing causes jest errors and memory leaks
+			global.window.close();
+			delete global.window;
+			// give above closing some extra time to finish
+			await new Promise((resolve) => setTimeout(resolve, waitTime));
+		}
+		if (global.app && typeof global.app.stop === "function") {
+			await global.app.stop();
+		}
+	} catch (error) {
+		console.warn("Error during application cleanup:", error);
+	} finally {
+		// Always clean up references regardless of errors
+		if (global.app) {
+			delete global.app;
+		}
+		if (global.window) {
+			delete global.window;
+		}
+		if (global.document) {
+			delete global.document;
+		}
 	}
-	if (!global.app) {
-		return Promise.resolve();
-	}
-	await global.app.stop();
-	delete global.app;
 };
 
 exports.getDocument = () => {

@@ -112,7 +112,7 @@ const WeatherProvider = Class.extend({
 	 * @param {Array.<string>} expectedResponseHeaders the expected HTTP headers to recieve
 	 * @returns {Promise} resolved when the fetch is done
 	 */
-	async fetchData (url, type = "json", requestHeaders = undefined, expectedResponseHeaders = undefined) {
+	fetchData (url, type = "json", requestHeaders = undefined, expectedResponseHeaders = undefined) {
 		const mockData = this.config.mockData;
 		if (mockData) {
 			const data = mockData.substring(1, mockData.length - 1);
