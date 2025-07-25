@@ -77,7 +77,7 @@ describe("Clock module", () => {
 			await helpers.getDocument();
 		});
 
-		it("should not show the time when digital clock is shown", async () => {
+		it("should not show the time when digital clock is shown", () => {
 			const elem = document.querySelector(".clock .digital .time");
 			expect(elem).toBeNull();
 		});
