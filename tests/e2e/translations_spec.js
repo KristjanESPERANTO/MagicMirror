@@ -11,10 +11,10 @@ const translations = require("../../translations/translations");
  * @returns {object} The JSDOM window object
  */
 function setupDOMEnvironment () {
-	const dom = new JSDOM("", { runScripts: "dangerously", resources: "usable" });
+	const translatorJs = fs.readFileSync(path.join(__dirname, "..", "..", "js", "translator.js"), "utf-8");
+	const dom = new JSDOM("", { url: "http://localhost:3000", runScripts: "dangerously", resources: "usable" });
 
 	dom.window.Log = { log: jest.fn(), error: jest.fn() };
-	const translatorJs = fs.readFileSync(path.join(__dirname, "..", "..", "js", "translator.js"), "utf-8");
 	dom.window.translations = translations;
 	dom.window.eval(translatorJs);
 
