@@ -308,15 +308,7 @@ const Module = Class.extend({
 		const translationFile = translations[language];
 		const translationsFallbackFile = translations[fallbackLanguage];
 
-		if (!translationFile) {
-			return Translator.load(this, translationsFallbackFile, true);
-		}
-
-		await Translator.load(this, translationFile, false);
-
-		if (translationFile !== translationsFallbackFile) {
-			return Translator.load(this, translationsFallbackFile, true);
-		}
+		Translator.registerModuleTranslationFiles(this, translationFile, translationsFallbackFile);
 	},
 
 	/**

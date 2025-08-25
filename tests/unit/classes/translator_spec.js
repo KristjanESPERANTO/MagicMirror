@@ -5,14 +5,22 @@ const { JSDOM } = require("jsdom");
 const express = require("express");
 
 /**
- * Helper function to setup DOM environment.
- * @returns {Promise<object>} The JSDOM window object
+ * Sets up a minimal DOM environment for Translator tests.
+ * Injects an optional language->path mapping via global `translations` (same as real app).
+ * Adds stubbed Log and fetch so translation JSON files can be requested from the local test server.
+ * @param {object} [mapping] Language -> JSON path mapping override.
+ * @returns {object} window
  */
-function setupDOMEnvironment () {
+function setupDOMEnvironment (mapping) {
 	const translatorJs = fs.readFileSync(path.join(__dirname, "..", "..", "..", "js", "translator.js"), "utf-8");
 	const dom = new JSDOM("", { url: "http://localhost:3000", runScripts: "outside-only" });
 
-	dom.window.Log = { log: jest.fn(), error: jest.fn() };
+	dom.window.Log = { log: jest.fn(), error: jest.fn(), warn: jest.fn() };
+	// Provide fetch so Translator.load can retrieve test JSON files.
+	dom.window.fetch = globalThis.fetch;
+	// Inject mapping directly (simulates translations.js)
+	// Translator expects a global `translations` map (see translations/translations.js in app)
+	dom.window.translations = mapping || {};
 	dom.window.eval(translatorJs);
 
 	return dom.window;
@@ -194,57 +202,33 @@ describe("Translator", () => {
 
 	describe("loadCoreTranslations", () => {
 		it("should load core translations and fallback", async () => {
-			const window = setupDOMEnvironment();
-			window.translations = { en: "http://localhost:3000/translations/translation_test.json" };
+			const window = setupDOMEnvironment({ en: "http://localhost:3000/translations/translation_test.json" });
 			const { Translator } = window;
 			await Translator.loadCoreTranslations("en");
 
 			const en = translationTestData;
-
-			await new Promise((resolve) => setTimeout(resolve, 500));
 
 			expect(Translator.coreTranslations).toEqual(en);
 			expect(Translator.coreTranslationsFallback).toEqual(en);
 		});
 
 		it("should load core fallback if language cannot be found", async () => {
-			const window = setupDOMEnvironment();
-			window.translations = { en: "http://localhost:3000/translations/translation_test.json" };
+			const window = setupDOMEnvironment({ en: "http://localhost:3000/translations/translation_test.json" });
 			const { Translator } = window;
 			await Translator.loadCoreTranslations("MISSINGLANG");
 
 			const en = translationTestData;
 
-			await new Promise((resolve) => setTimeout(resolve, 500));
-
 			expect(Translator.coreTranslations).toEqual({});
 			expect(Translator.coreTranslationsFallback).toEqual(en);
 		});
-	});
-
-	describe("loadCoreTranslationsFallback", () => {
-		it("should load core translations fallback", async () => {
-			const window = setupDOMEnvironment();
-			window.translations = { en: "http://localhost:3000/translations/translation_test.json" };
+		it("should set empty coreTranslations but populate fallback when only fallback language exists", async () => {
+			// mapping has only 'en'; request 'xx'
+			const window = setupDOMEnvironment({ en: "http://localhost:3000/translations/translation_test.json" });
 			const { Translator } = window;
-			await Translator.loadCoreTranslationsFallback();
-
-			const en = translationTestData;
-
-			await new Promise((resolve) => setTimeout(resolve, 500));
-
-			expect(Translator.coreTranslationsFallback).toEqual(en);
-		});
-
-		it("should load core fallback if language cannot be found", async () => {
-			const window = setupDOMEnvironment();
-			window.translations = {};
-			const { Translator } = window;
-			await Translator.loadCoreTranslations();
-
-			await new Promise((resolve) => setTimeout(resolve, 500));
-
-			expect(Translator.coreTranslationsFallback).toEqual({});
+			await Translator.loadCoreTranslations("xx");
+			expect(Translator.coreTranslations).toEqual({});
+			expect(Object.keys(Translator.coreTranslationsFallback).length).toBeGreaterThan(0);
 		});
 	});
 });

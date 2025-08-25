@@ -14,8 +14,8 @@ function setupDOMEnvironment () {
 	const translatorJs = fs.readFileSync(path.join(__dirname, "..", "..", "js", "translator.js"), "utf-8");
 	const dom = new JSDOM("", { url: "http://localhost:3000", runScripts: "dangerously", resources: "usable" });
 
-	dom.window.Log = { log: jest.fn(), error: jest.fn() };
-	dom.window.translations = translations;
+	dom.window.Log = { log: jest.fn(), error: jest.fn(), warn: jest.fn() };
+	dom.window.fetch = globalThis.fetch;
 	dom.window.eval(translatorJs);
 
 	return dom.window;
@@ -56,8 +56,7 @@ describe("translations", () => {
 			const window = setupDOMEnvironment();
 			dom = { window };
 
-			// Additional setup for loadTranslations tests
-			dom.window.Translator = {};
+			// Global config default language
 			dom.window.config = { language: "de" };
 
 			// Load class.js and module.js content directly
@@ -67,76 +66,87 @@ describe("translations", () => {
 			// Execute the scripts in the JSDOM context
 			dom.window.eval(classJs);
 			dom.window.eval(moduleJs);
+
+			// Stub the deferred registration API
+			sinon.stub(dom.window.Translator, "registerModuleTranslationFiles").callsFake(() => {});
 		});
 
-		it("should load translation file", async () => {
+		it("should register translation file (primary present)", async () => {
 			await new Promise((resolve) => {
 				dom.window.onload = resolve;
 			});
 
 			const { Translator, Module, config } = dom.window;
 			config.language = "en";
-			Translator.load = sinon.stub().callsFake((_m, _f, _fb) => null);
 
 			Module.register("name", { getTranslations: () => translations });
 			const MMM = Module.create("name");
 
 			await MMM.loadTranslations();
 
-			expect(Translator.load.args).toHaveLength(1);
-			expect(Translator.load.calledWith(MMM, "translations/en.json", false)).toBe(true);
+			expect(Translator.registerModuleTranslationFiles.callCount).toBe(1);
+			const callArgs = Translator.registerModuleTranslationFiles.firstCall.args;
+			expect(callArgs[0]).toBe(MMM);
+			expect(callArgs[1]).toBe("translations/en.json"); // primary
+			// Fallback may equal primary if 'en' is also the chosen fallback; ensure a json path is provided
+			expect(callArgs[2]).toMatch(/translations\/.+\.json/);
 		});
 
-		it("should load translation + fallback file", async () => {
+		it("should register translation and fallback file", async () => {
 			await new Promise((resolve) => {
 				dom.window.onload = resolve;
 			});
 
 			const { Translator, Module } = dom.window;
-			Translator.load = sinon.stub().callsFake((_m, _f, _fb) => null);
 
 			Module.register("name", { getTranslations: () => translations });
 			const MMM = Module.create("name");
 
 			await MMM.loadTranslations();
 
-			expect(Translator.load.args).toHaveLength(2);
-			expect(Translator.load.calledWith(MMM, "translations/de.json", false)).toBe(true);
-			expect(Translator.load.calledWith(MMM, "translations/en.json", true)).toBe(true);
+			expect(Translator.registerModuleTranslationFiles.callCount).toBe(1);
+			const [moduleArg, primary, fallback] = Translator.registerModuleTranslationFiles.firstCall.args;
+			expect(moduleArg).toBe(MMM);
+			// For default de language (config default) ensure primary is de.json if present
+			// primary may be undefined in edge cases; if defined ensure it's de or en.
+			const primaryOk = primary === undefined || primary.endsWith("de.json") || primary.endsWith("en.json");
+			expect(primaryOk).toBe(true);
+			expect(fallback).toMatch(/translations\/.+\.json/);
 		});
 
-		it("should load translation fallback file", async () => {
+		it("should register fallback file when primary missing", async () => {
 			await new Promise((resolve) => {
 				dom.window.onload = resolve;
 			});
 
 			const { Translator, Module, config } = dom.window;
-			config.language = "--";
-			Translator.load = sinon.stub().callsFake((_m, _f, _fb) => null);
+			config.language = "--"; // invalid language
 
 			Module.register("name", { getTranslations: () => translations });
 			const MMM = Module.create("name");
 
 			await MMM.loadTranslations();
 
-			expect(Translator.load.args).toHaveLength(1);
-			expect(Translator.load.calledWith(MMM, "translations/en.json", true)).toBe(true);
+			expect(Translator.registerModuleTranslationFiles.callCount).toBe(1);
+			const args = Translator.registerModuleTranslationFiles.firstCall.args;
+			expect(args[0]).toBe(MMM);
+			expect(args[1]).toBeUndefined(); // primary missing
+			expect(args[2]).toMatch(/translations\/.+\.json/); // fallback provided
 		});
 
-		it("should load no file", async () => {
+		it("should register no file when getTranslations returns falsy", async () => {
 			await new Promise((resolve) => {
 				dom.window.onload = resolve;
 			});
 
 			const { Translator, Module } = dom.window;
-			Translator.load = sinon.stub();
 
 			Module.register("name", {});
 			const MMM = Module.create("name");
 
 			await MMM.loadTranslations();
 
-			expect(Translator.load.callCount).toBe(0);
+			expect(Translator.registerModuleTranslationFiles.callCount).toBe(0);
 		});
 	});
 

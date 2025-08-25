@@ -60,7 +60,7 @@ exports.getDocument = () => {
 			global.navigator = {
 				useragent: "node.js"
 			};
-			dom.window.fetch = fetch;
+			dom.window.fetch = globalThis.fetch;
 			dom.window.onload = () => {
 				global.document = dom.window.document;
 				resolve();

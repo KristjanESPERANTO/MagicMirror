@@ -15,6 +15,7 @@ const Loader = (function () {
 	 * @returns {object} with key: values as assembled in js/server_functions.js
 	 */
 	const getEnvVars = async function () {
+		await new Promise((resolve) => setTimeout(resolve, 20));
 		const res = await fetch(`${location.protocol}//${location.host}${config.basePath}env`);
 		return JSON.parse(await res.text());
 	};
@@ -170,6 +171,7 @@ const Loader = (function () {
 	 * @returns {Promise} resolved when the file is loaded
 	 */
 	const loadFile = async function (fileName) {
+		await new Promise((resolve) => setTimeout(resolve, 20));
 		const extension = fileName.slice((Math.max(0, fileName.lastIndexOf(".")) || Infinity) + 1);
 		let script, stylesheet;
 
