@@ -202,8 +202,6 @@ describe("Translator", () => {
 
 			const en = translationTestData;
 
-			await new Promise((resolve) => setTimeout(resolve, 500));
-
 			expect(Translator.coreTranslations).toEqual(en);
 			expect(Translator.coreTranslationsFallback).toEqual(en);
 		});
@@ -215,8 +213,6 @@ describe("Translator", () => {
 			await Translator.loadCoreTranslations("MISSINGLANG");
 
 			const en = translationTestData;
-
-			await new Promise((resolve) => setTimeout(resolve, 500));
 
 			expect(Translator.coreTranslations).toEqual({});
 			expect(Translator.coreTranslationsFallback).toEqual(en);
@@ -232,8 +228,6 @@ describe("Translator", () => {
 
 			const en = translationTestData;
 
-			await new Promise((resolve) => setTimeout(resolve, 500));
-
 			expect(Translator.coreTranslationsFallback).toEqual(en);
 		});
 
@@ -242,8 +236,6 @@ describe("Translator", () => {
 			window.translations = {};
 			const { Translator } = window;
 			await Translator.loadCoreTranslations();
-
-			await new Promise((resolve) => setTimeout(resolve, 500));
 
 			expect(Translator.coreTranslationsFallback).toEqual({});
 		});
