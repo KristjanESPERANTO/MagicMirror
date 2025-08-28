@@ -6,19 +6,21 @@ const express = require("express");
 const translations = require("../../translations/translations");
 
 /**
- * Helper function to setup DOM environment.
- * Loads the Translator script into the JSDOM window.
- * @returns {object} The JSDOM window object with translations and Translator loaded
+ * Helper function to create a fresh Translator instance with DOM environment.
+ * @returns {object} Object containing window and Translator
  */
-function setupDOMEnvironment () {
+function createTranslationTestEnvironment () {
+	// Setup DOM environment with Translator
 	const translatorJs = fs.readFileSync(path.join(__dirname, "..", "..", "js", "translator.js"), "utf-8");
-	const dom = new JSDOM("", { url: "http://localhost:3000", runScripts: "dangerously", resources: "usable" });
+	const dom = new JSDOM("", { url: "http://localhost:3000", runScripts: "outside-only" });
 
 	dom.window.Log = { log: jest.fn(), error: jest.fn() };
 	dom.window.translations = translations;
 	dom.window.eval(translatorJs);
 
-	return dom.window;
+	const window = dom.window;
+
+	return { window, Translator: window.Translator };
 }
 
 describe("translations", () => {
@@ -52,21 +54,22 @@ describe("translations", () => {
 		let dom;
 
 		beforeEach(() => {
-			// Create a new JSDOM instance for each test
-			const window = setupDOMEnvironment();
-			dom = { window };
+			// Create a new translation test environment for each test
+			const env = createTranslationTestEnvironment();
+			const window = env.window;
 
-			// Additional setup for loadTranslations tests
-			dom.window.Translator = {};
-			dom.window.config = { language: "de" };
-
-			// Load class.js and module.js content directly
+			// Load class.js and module.js content directly for loadTranslations tests
 			const classJs = fs.readFileSync(path.join(__dirname, "..", "..", "js", "class.js"), "utf-8");
 			const moduleJs = fs.readFileSync(path.join(__dirname, "..", "..", "js", "module.js"), "utf-8");
 
 			// Execute the scripts in the JSDOM context
-			dom.window.eval(classJs);
-			dom.window.eval(moduleJs);
+			window.eval(classJs);
+			window.eval(moduleJs);
+
+			// Additional setup for loadTranslations tests
+			window.config = { language: "de" };
+
+			dom = { window };
 		});
 
 		it("should load translation file", async () => {
@@ -134,9 +137,7 @@ describe("translations", () => {
 	describe("parsing language files through the Translator class", () => {
 		for (const language in translations) {
 			it(`should parse ${language}`, async () => {
-				const window = setupDOMEnvironment();
-
-				const { Translator } = window;
+				const { Translator } = createTranslationTestEnvironment();
 				await Translator.load(mmm, translations[language], false);
 
 				expect(typeof Translator.translations[mmm.name]).toBe("object");
@@ -168,8 +169,7 @@ describe("translations", () => {
 
 		// Function to initialize JSDOM and load translations
 		const initializeTranslationDOM = async (language) => {
-			const window = setupDOMEnvironment();
-			const { Translator } = window;
+			const { Translator } = createTranslationTestEnvironment();
 			await Translator.load(mmm, translations[language], false);
 			return Translator.translations[mmm.name];
 		};
