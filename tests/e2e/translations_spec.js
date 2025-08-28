@@ -69,10 +69,6 @@ describe("translations", () => {
 		});
 
 		it("should load translation file", async () => {
-			await new Promise((resolve) => {
-				dom.window.onload = resolve;
-			});
-
 			const { Translator, Module, config } = dom.window;
 			config.language = "en";
 			Translator.load = jest.fn().mockImplementation((_m, _f, _fb) => null);
@@ -87,10 +83,6 @@ describe("translations", () => {
 		});
 
 		it("should load translation + fallback file", async () => {
-			await new Promise((resolve) => {
-				dom.window.onload = resolve;
-			});
-
 			const { Translator, Module } = dom.window;
 			Translator.load = jest.fn().mockImplementation((_m, _f, _fb) => null);
 
@@ -105,10 +97,6 @@ describe("translations", () => {
 		});
 
 		it("should load translation fallback file", async () => {
-			await new Promise((resolve) => {
-				dom.window.onload = resolve;
-			});
-
 			const { Translator, Module, config } = dom.window;
 			config.language = "--";
 			Translator.load = jest.fn().mockImplementation((_m, _f, _fb) => null);
@@ -123,10 +111,6 @@ describe("translations", () => {
 		});
 
 		it("should load no file", async () => {
-			await new Promise((resolve) => {
-				dom.window.onload = resolve;
-			});
-
 			const { Translator, Module } = dom.window;
 			Translator.load = jest.fn();
 
@@ -150,10 +134,6 @@ describe("translations", () => {
 		for (const language in translations) {
 			it(`should parse ${language}`, async () => {
 				const window = setupDOMEnvironment();
-
-				await new Promise((resolve) => {
-					window.onload = resolve;
-				});
 
 				const { Translator } = window;
 				await Translator.load(mmm, translations[language], false);
@@ -186,16 +166,11 @@ describe("translations", () => {
 		};
 
 		// Function to initialize JSDOM and load translations
-		const initializeTranslationDOM = (language) => {
+		const initializeTranslationDOM = async (language) => {
 			const window = setupDOMEnvironment();
-
-			return new Promise((resolve) => {
-				window.onload = async () => {
-					const { Translator } = window;
-					await Translator.load(mmm, translations[language], false);
-					resolve(Translator.translations[mmm.name]);
-				};
-			});
+			const { Translator } = window;
+			await Translator.load(mmm, translations[language], false);
+			return Translator.translations[mmm.name];
 		};
 
 		beforeAll(async () => {
