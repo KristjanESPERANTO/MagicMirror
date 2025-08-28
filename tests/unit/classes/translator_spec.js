@@ -6,7 +6,8 @@ const express = require("express");
 
 /**
  * Helper function to setup DOM environment.
- * @returns {Promise<object>} The JSDOM window object
+ * Loads the Translator script into the JSDOM window.
+ * @returns {object} The JSDOM window object with Translator loaded
  */
 function setupDOMEnvironment () {
 	const translatorJs = fs.readFileSync(path.join(__dirname, "..", "..", "..", "js", "translator.js"), "utf-8");
