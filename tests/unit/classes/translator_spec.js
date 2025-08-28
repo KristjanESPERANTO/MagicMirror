@@ -10,7 +10,7 @@ const express = require("express");
  */
 function createTranslationTestEnvironment () {
 	const translatorJs = fs.readFileSync(path.join(__dirname, "..", "..", "..", "js", "translator.js"), "utf-8");
-	const dom = new JSDOM("", { url: "http://localhost:3000", runScripts: "outside-only" });
+	const dom = new JSDOM("", { url: "http://localhost:3001", runScripts: "outside-only" });
 
 	dom.window.Log = { log: jest.fn(), error: jest.fn() };
 	dom.window.eval(translatorJs);
@@ -32,7 +32,7 @@ describe("Translator", () => {
 		});
 		app.use("/translations", express.static(path.join(__dirname, "..", "..", "..", "tests", "mocks")));
 
-		server = app.listen(3000);
+		server = app.listen(3001);
 
 		server.on("connection", (socket) => {
 			sockets.add(socket);
@@ -145,7 +145,7 @@ describe("Translator", () => {
 		const mmm = {
 			name: "TranslationTest",
 			file (file) {
-				return `http://localhost:3000/translations/${file}`;
+				return `http://localhost:3001/translations/${file}`;
 			}
 		};
 
@@ -186,7 +186,7 @@ describe("Translator", () => {
 	describe("loadCoreTranslations", () => {
 		it("should load core translations and fallback", async () => {
 			const { window, Translator } = createTranslationTestEnvironment();
-			window.translations = { en: "http://localhost:3000/translations/translation_test.json" };
+			window.translations = { en: "http://localhost:3001/translations/translation_test.json" };
 			await Translator.loadCoreTranslations("en");
 
 			const en = translationTestData;
@@ -197,7 +197,7 @@ describe("Translator", () => {
 
 		it("should load core fallback if language cannot be found", async () => {
 			const { window, Translator } = createTranslationTestEnvironment();
-			window.translations = { en: "http://localhost:3000/translations/translation_test.json" };
+			window.translations = { en: "http://localhost:3001/translations/translation_test.json" };
 			await Translator.loadCoreTranslations("MISSINGLANG");
 
 			const en = translationTestData;
@@ -210,7 +210,7 @@ describe("Translator", () => {
 	describe("loadCoreTranslationsFallback", () => {
 		it("should load core translations fallback", async () => {
 			const { window, Translator } = createTranslationTestEnvironment();
-			window.translations = { en: "http://localhost:3000/translations/translation_test.json" };
+			window.translations = { en: "http://localhost:3001/translations/translation_test.json" };
 			await Translator.loadCoreTranslationsFallback();
 
 			const en = translationTestData;
