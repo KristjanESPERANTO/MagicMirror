@@ -3,7 +3,6 @@ const path = require("node:path");
 const helmet = require("helmet");
 const { JSDOM } = require("jsdom");
 const express = require("express");
-const sinon = require("sinon");
 const translations = require("../../translations/translations");
 
 /**
@@ -76,15 +75,15 @@ describe("translations", () => {
 
 			const { Translator, Module, config } = dom.window;
 			config.language = "en";
-			Translator.load = sinon.stub().callsFake((_m, _f, _fb) => null);
+			Translator.load = jest.fn().mockImplementation((_m, _f, _fb) => null);
 
 			Module.register("name", { getTranslations: () => translations });
 			const MMM = Module.create("name");
 
 			await MMM.loadTranslations();
 
-			expect(Translator.load.args).toHaveLength(1);
-			expect(Translator.load.calledWith(MMM, "translations/en.json", false)).toBe(true);
+			expect(Translator.load.mock.calls).toHaveLength(1);
+			expect(Translator.load).toHaveBeenCalledWith(MMM, "translations/en.json", false);
 		});
 
 		it("should load translation + fallback file", async () => {
@@ -93,16 +92,16 @@ describe("translations", () => {
 			});
 
 			const { Translator, Module } = dom.window;
-			Translator.load = sinon.stub().callsFake((_m, _f, _fb) => null);
+			Translator.load = jest.fn().mockImplementation((_m, _f, _fb) => null);
 
 			Module.register("name", { getTranslations: () => translations });
 			const MMM = Module.create("name");
 
 			await MMM.loadTranslations();
 
-			expect(Translator.load.args).toHaveLength(2);
-			expect(Translator.load.calledWith(MMM, "translations/de.json", false)).toBe(true);
-			expect(Translator.load.calledWith(MMM, "translations/en.json", true)).toBe(true);
+			expect(Translator.load.mock.calls).toHaveLength(2);
+			expect(Translator.load).toHaveBeenCalledWith(MMM, "translations/de.json", false);
+			expect(Translator.load).toHaveBeenCalledWith(MMM, "translations/en.json", true);
 		});
 
 		it("should load translation fallback file", async () => {
@@ -112,15 +111,15 @@ describe("translations", () => {
 
 			const { Translator, Module, config } = dom.window;
 			config.language = "--";
-			Translator.load = sinon.stub().callsFake((_m, _f, _fb) => null);
+			Translator.load = jest.fn().mockImplementation((_m, _f, _fb) => null);
 
 			Module.register("name", { getTranslations: () => translations });
 			const MMM = Module.create("name");
 
 			await MMM.loadTranslations();
 
-			expect(Translator.load.args).toHaveLength(1);
-			expect(Translator.load.calledWith(MMM, "translations/en.json", true)).toBe(true);
+			expect(Translator.load.mock.calls).toHaveLength(1);
+			expect(Translator.load).toHaveBeenCalledWith(MMM, "translations/en.json", true);
 		});
 
 		it("should load no file", async () => {
@@ -129,14 +128,14 @@ describe("translations", () => {
 			});
 
 			const { Translator, Module } = dom.window;
-			Translator.load = sinon.stub();
+			Translator.load = jest.fn();
 
 			Module.register("name", {});
 			const MMM = Module.create("name");
 
 			await MMM.loadTranslations();
 
-			expect(Translator.load.callCount).toBe(0);
+			expect(Translator.load.mock.calls).toHaveLength(0);
 		});
 	});
 
