@@ -86,7 +86,6 @@ const CalendarFetcherUtils = {
 		const rule = event.rrule;
 		const isFullDay = CalendarFetcherUtils.isFullDayEvent(event);
 		const localTimezone = CalendarFetcherUtils.getLocalTimezone();
-		const eventTimezone = event.start && event.start.tz ? event.start.tz : localTimezone;
 
 		// rrule.js interprets years < 1900 as offsets from 1900 which breaks parsing for
 		// some imported calendars (notably Google birthday calendars). Normalise those
@@ -130,18 +129,39 @@ const CalendarFetcherUtils = {
 
 		const validDates = rawDates.filter(Boolean);
 		return validDates.map((date) => {
-			const baseUtcMoment = moment.tz(date, "UTC");
+			let occurrenceMoment;
+			let floatingStartDate = null;
 			if (isFullDay) {
-				// Convert the UTC timestamp into the configured event timezone and clamp to the
-				// start of that day so the calendar date stays consistent across viewer timezones.
-				return baseUtcMoment.clone().tz(eventTimezone).startOf("day");
+				// Treat DATE-based recurrences as floating dates in their original timezone so they
+				// stay anchored to the same calendar day regardless of where the viewer is located.
+				const floatingZone = event.start?.tz || rule.origOptions?.tzid;
+				if (floatingZone) {
+					const canonicalDate = moment(date).format("YYYY-MM-DD");
+					occurrenceMoment = moment.tz(canonicalDate, "YYYY-MM-DD", floatingZone);
+				} else {
+					occurrenceMoment = moment(date).startOf("day");
+				}
+				floatingStartDate = occurrenceMoment.clone().format("YYYY-MM-DD");
+				if (!event._debugLogged) {
+					event._debugLogged = true;
+					Log.debug("[Calendar] Floating recurrence", {
+						title: CalendarFetcherUtils.getTitleFromEvent(event),
+						rawDate: date,
+						floatingZone: floatingZone,
+						floatingStartDate
+					});
+				}
+			} else {
+				const baseUtcMoment = moment.tz(date, "UTC");
+				if (event.start && event.start.tz) {
+					// Preserve the original start timezone when the ICS explicitly defines one.
+					occurrenceMoment = baseUtcMoment.clone().tz(event.start.tz, true);
+				} else {
+					// Fallback: render in the viewer's local timezone while keeping the absolute instant.
+					occurrenceMoment = baseUtcMoment.clone().tz(localTimezone, true);
+				}
 			}
-			if (event.start && event.start.tz) {
-				// Preserve the original start timezone when the ICS explicitly defines one.
-				return baseUtcMoment.clone().tz(event.start.tz, true);
-			}
-			// Fallback: render in the viewer's local timezone while keeping the absolute instant.
-			return baseUtcMoment.clone().tz(localTimezone, true);
+			return { occurrence: occurrenceMoment, floatingStartDate: floatingStartDate };
 		});
 	},
 
@@ -224,17 +244,29 @@ const CalendarFetcherUtils = {
 				// TODO This should be a seperate function.
 				if (event.rrule && typeof event.rrule !== "undefined" && !isFacebookBirthday) {
 					// Recurring event.
-					let moments = CalendarFetcherUtils.getMomentsFromRecurringEvent(event, pastLocalMoment, futureLocalMoment, durationMs);
+					const occurrences = CalendarFetcherUtils.getMomentsFromRecurringEvent(event, pastLocalMoment, futureLocalMoment, durationMs);
 
 					// Loop through the set of moment entries to see which recurrences should be added to our event list.
 					// TODO This should create an event per moment so we can change anything we want.
-					for (let m in moments) {
+					for (const occurrenceData of occurrences) {
 						let curEvent = event;
 						let showRecurrence = true;
-						let recurringEventStartMoment = moments[m].tz(CalendarFetcherUtils.getLocalTimezone()).clone();
+						let recurringEventStartMoment = occurrenceData.occurrence
+							.clone()
+							.tz(CalendarFetcherUtils.getLocalTimezone(), CalendarFetcherUtils.isFullDayEvent(event));
 						let recurringEventEndMoment = recurringEventStartMoment.clone().add(durationMs, "ms");
 
-						let dateKey = recurringEventStartMoment.tz("UTC").format("YYYY-MM-DD");
+						let floatingStartDate = occurrenceData.floatingStartDate;
+						let floatingEndDate = null;
+						if (floatingStartDate) {
+							let floatingEndMoment = occurrenceData.occurrence.clone().add(durationMs, "ms");
+							if (durationMs === 0) {
+								floatingEndMoment = occurrenceData.occurrence.clone().endOf("day");
+							}
+							floatingEndDate = floatingEndMoment.format("YYYY-MM-DD");
+						}
+
+						let dateKey = recurringEventStartMoment.clone().tz("UTC").format("YYYY-MM-DD");
 
 						Log.debug("event date dateKey=", dateKey);
 						// For each date that we're checking, it's possible that there is a recurrence override for that one day.
@@ -244,16 +276,30 @@ const CalendarFetcherUtils = {
 								Log.debug("have a recurrence match for dateKey=", dateKey);
 								// We found an override, so for this recurrence, use a potentially different title, start date, and duration.
 								curEvent = curEvent.recurrences[dateKey];
+								const recurrenceIsFullDay = CalendarFetcherUtils.isFullDayEvent(curEvent);
 								// Some event start/end dates don't have timezones
 								if (curEvent.start.tz) {
-									recurringEventStartMoment = moment(curEvent.start).tz(curEvent.start.tz).tz(CalendarFetcherUtils.getLocalTimezone());
+									recurringEventStartMoment = moment(curEvent.start).tz(curEvent.start.tz).tz(CalendarFetcherUtils.getLocalTimezone(), recurrenceIsFullDay);
 								} else {
-									recurringEventStartMoment = moment(curEvent.start).tz(CalendarFetcherUtils.getLocalTimezone());
+									recurringEventStartMoment = moment(curEvent.start).tz(CalendarFetcherUtils.getLocalTimezone(), recurrenceIsFullDay);
 								}
 								if (curEvent.end.tz) {
-									recurringEventEndMoment = moment(curEvent.end).tz(curEvent.end.tz).tz(CalendarFetcherUtils.getLocalTimezone());
+									recurringEventEndMoment = moment(curEvent.end).tz(curEvent.end.tz).tz(CalendarFetcherUtils.getLocalTimezone(), recurrenceIsFullDay);
 								} else {
-									recurringEventEndMoment = moment(curEvent.end).tz(CalendarFetcherUtils.getLocalTimezone());
+									recurringEventEndMoment = moment(curEvent.end).tz(CalendarFetcherUtils.getLocalTimezone(), recurrenceIsFullDay);
+								}
+
+								if (recurrenceIsFullDay) {
+									const overrideStart = curEvent.start.tz ? moment(curEvent.start).tz(curEvent.start.tz, true).startOf("day") : moment(curEvent.start).startOf("day");
+									floatingStartDate = overrideStart.format("YYYY-MM-DD");
+									let overrideEnd = curEvent.end ? (curEvent.end.tz ? moment(curEvent.end).tz(curEvent.end.tz, true) : moment(curEvent.end)) : overrideStart.clone();
+									if (overrideStart.valueOf() === overrideEnd.valueOf()) {
+										overrideEnd = overrideEnd.endOf("day");
+									}
+									floatingEndDate = overrideEnd.format("YYYY-MM-DD");
+								} else {
+									floatingStartDate = null;
+									floatingEndDate = null;
 								}
 							} else {
 								Log.debug("recurrence key ", dateKey, " doesn't match");
@@ -270,11 +316,26 @@ const CalendarFetcherUtils = {
 
 						if (recurringEventStartMoment.valueOf() === recurringEventEndMoment.valueOf()) {
 							recurringEventEndMoment = recurringEventEndMoment.endOf("day");
+							if (floatingStartDate && !floatingEndDate) {
+								floatingEndDate = floatingStartDate;
+							}
 						}
 
 						const recurrenceTitle = CalendarFetcherUtils.getTitleFromEvent(curEvent);
+						const fullDayRecurringEvent = CalendarFetcherUtils.isFullDayEvent(curEvent);
+						if (fullDayRecurringEvent) {
+							if (!floatingStartDate) {
+								floatingStartDate = recurringEventStartMoment.clone().format("YYYY-MM-DD");
+							}
+							if (!floatingEndDate) {
+								floatingEndDate = recurringEventEndMoment.clone().format("YYYY-MM-DD");
+							}
+						} else {
+							floatingStartDate = null;
+							floatingEndDate = null;
+						}
 
-						// If this recurrence ends before the start of the date range, or starts after the end of the date range, don"t add
+						// If this recurrence ends before the start of the date range, or starts after the end of the date range, don't add
 						// it to the event list.
 						if (recurringEventEndMoment.isBefore(pastLocalMoment) || recurringEventStartMoment.isAfter(futureLocalMoment)) {
 							showRecurrence = false;
@@ -290,13 +351,15 @@ const CalendarFetcherUtils = {
 								title: recurrenceTitle,
 								startDate: recurringEventStartMoment.format("x"),
 								endDate: recurringEventEndMoment.format("x"),
-								fullDayEvent: CalendarFetcherUtils.isFullDayEvent(event),
+								fullDayEvent: fullDayRecurringEvent,
 								recurringEvent: true,
 								class: event.class,
 								firstYear: event.start.getFullYear(),
 								location: location,
 								geo: geo,
-								description: description
+								description: description,
+								floatingStartDate: floatingStartDate,
+								floatingEndDate: floatingEndDate
 							});
 						} else {
 							Log.debug("not saving event ", recurrenceTitle, eventStartMoment);
@@ -341,6 +404,8 @@ const CalendarFetcherUtils = {
 					}
 
 					// Every thing is good. Add it to the list.
+					const floatingStartDate = fullDayEvent ? eventStartMoment.clone().format("YYYY-MM-DD") : null;
+					const floatingEndDate = fullDayEvent ? eventEndMoment.clone().format("YYYY-MM-DD") : null;
 					newEvents.push({
 						title: title,
 						startDate: eventStartMoment.format("x"),
@@ -351,7 +416,9 @@ const CalendarFetcherUtils = {
 						firstYear: event.start.getFullYear(),
 						location: location,
 						geo: geo,
-						description: description
+						description: description,
+						floatingStartDate: floatingStartDate,
+						floatingEndDate: floatingEndDate
 					});
 				}
 			}

@@ -248,8 +248,8 @@ Module.register("calendar", {
 		let lastSeenDate = "";
 
 		events.forEach((event, index) => {
-			const eventStartDateMoment = this.timestampToMoment(event.startDate);
-			const eventEndDateMoment = this.timestampToMoment(event.endDate);
+			const eventStartDateMoment = this.timestampToMoment(event.startDate, event.fullDayEvent, event.floatingStartDate);
+			const eventEndDateMoment = this.timestampToMoment(event.endDate, event.fullDayEvent, event.floatingEndDate);
 			const dateAsString = eventStartDateMoment.format(this.config.dateFormat);
 			if (this.config.timeFormat === "dateheaders") {
 				if (lastSeenDate !== dateAsString) {
@@ -584,10 +584,17 @@ Module.register("calendar", {
 	/**
 	 * converts the given timestamp to a moment with a timezone
 	 * @param {number} timestamp timestamp from an event
+	 * @param {boolean} isFullDayEvent flag indicating whether the timestamp represents an all-day event
+	 * @param {?string} floatingDate canonical YYYY-MM-DD date for floating events
 	 * @returns {moment.Moment} moment with a timezone
 	 */
-	timestampToMoment (timestamp) {
-		return moment(timestamp, "x").tz(moment.tz.guess());
+	timestampToMoment (timestamp, isFullDayEvent = false, floatingDate = null) {
+		const viewerOffsetMinutes = -new Date().getTimezoneOffset();
+		if (isFullDayEvent && floatingDate) {
+			return moment(floatingDate, "YYYY-MM-DD").utcOffset(viewerOffsetMinutes, true).startOf("day");
+		}
+		const baseMoment = moment(timestamp, "x").utc();
+		return baseMoment.clone().utcOffset(viewerOffsetMinutes, isFullDayEvent);
 	},
 
 	/**
@@ -608,8 +615,8 @@ Module.register("calendar", {
 			let by_url_calevents = [];
 			for (const e in calendar) {
 				const event = JSON.parse(JSON.stringify(calendar[e])); // clone object
-				const eventStartDateMoment = this.timestampToMoment(event.startDate);
-				const eventEndDateMoment = this.timestampToMoment(event.endDate);
+				const eventStartDateMoment = this.timestampToMoment(event.startDate, event.fullDayEvent, event.floatingStartDate);
+				const eventEndDateMoment = this.timestampToMoment(event.endDate, event.fullDayEvent, event.floatingEndDate);
 
 				if (this.config.hidePrivate && event.class === "PRIVATE") {
 					// do not add the current event, skip it
@@ -650,24 +657,26 @@ Module.register("calendar", {
 					let count = 1;
 					while (eventEndDateMoment.isAfter(midnight)) {
 						const thisEvent = JSON.parse(JSON.stringify(event)); // clone object
-						thisEvent.today = this.timestampToMoment(thisEvent.startDate).isSame(now, "d");
-						thisEvent.tomorrow = this.timestampToMoment(thisEvent.startDate).isSame(now.clone().add(1, "days"), "d");
+						thisEvent.today = this.timestampToMoment(thisEvent.startDate, thisEvent.fullDayEvent, thisEvent.floatingStartDate).isSame(now, "d");
+						thisEvent.tomorrow = this.timestampToMoment(thisEvent.startDate, thisEvent.fullDayEvent, thisEvent.floatingStartDate).isSame(now.clone().add(1, "days"), "d");
 						thisEvent.endDate = midnight.clone().subtract(1, "day").format("x");
+						thisEvent.floatingEndDate = midnight.clone().subtract(1, "day").format("YYYY-MM-DD");
 						thisEvent.title += ` (${count}/${maxCount})`;
 						splitEvents.push(thisEvent);
 
 						event.startDate = midnight.format("x");
+						event.floatingStartDate = midnight.clone().format("YYYY-MM-DD");
 						count += 1;
 						midnight = midnight.clone().add(1, "day").endOf("day"); // next day
 					}
 					// Last day
 					event.title += ` (${count}/${maxCount})`;
-					event.today += this.timestampToMoment(event.startDate).isSame(now, "d");
-					event.tomorrow = this.timestampToMoment(event.startDate).isSame(now.clone().add(1, "days"), "d");
+					event.today += this.timestampToMoment(event.startDate, event.fullDayEvent, event.floatingStartDate).isSame(now, "d");
+					event.tomorrow = this.timestampToMoment(event.startDate, event.fullDayEvent, event.floatingStartDate).isSame(now.clone().add(1, "days"), "d");
 					splitEvents.push(event);
 
 					for (let splitEvent of splitEvents) {
-						if (this.timestampToMoment(splitEvent.endDate).isAfter(now) && this.timestampToMoment(splitEvent.endDate).isSameOrBefore(future)) {
+						if (this.timestampToMoment(splitEvent.endDate, splitEvent.fullDayEvent, splitEvent.floatingEndDate).isAfter(now) && this.timestampToMoment(splitEvent.endDate, splitEvent.fullDayEvent, splitEvent.floatingEndDate).isSameOrBefore(future)) {
 							by_url_calevents.push(splitEvent);
 						}
 					}
@@ -702,7 +711,8 @@ Module.register("calendar", {
 		 */
 		if (this.config.limitDays > 0 && events.length > 0) { // watch out for initial display before events arrive from helper
 			// Group all events by date, events on the same date will be in a list with the key being the date.
-			const eventsByDate = Object.groupBy(events, (ev) => this.timestampToMoment(ev.startDate).format("YYYY-MM-DD"));
+			const eventsByDate
+				= Object.groupBy(events, (ev) => this.timestampToMoment(ev.startDate, ev.fullDayEvent, ev.floatingStartDate).format("YYYY-MM-DD"));
 			const newEvents = [];
 			let currentDate = moment();
 			let daysCollected = 0;
@@ -712,7 +722,7 @@ Module.register("calendar", {
 				// Check if there are events on the currentDate
 				if (eventsByDate[dateStr] && eventsByDate[dateStr].length > 0) {
 					// If there are any events today then get all those events and select the currently active events and the events that are starting later in the day.
-					newEvents.push(...eventsByDate[dateStr].filter((ev) => this.timestampToMoment(ev.endDate).isAfter(moment())));
+					newEvents.push(...eventsByDate[dateStr].filter((ev) => this.timestampToMoment(ev.endDate, ev.fullDayEvent, ev.floatingEndDate).isAfter(moment())));
 					// Since we found a day with events, increase the daysCollected by 1
 					daysCollected++;
 				}
