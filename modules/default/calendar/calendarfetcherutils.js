@@ -84,47 +84,65 @@ const CalendarFetcherUtils = {
 	 */
 	getMomentsFromRecurringEvent (event, pastLocalMoment, futureLocalMoment, durationInMs) {
 		const rule = event.rrule;
+		const isFullDay = CalendarFetcherUtils.isFullDayEvent(event);
+		const localTimezone = CalendarFetcherUtils.getLocalTimezone();
+		const eventTimezone = event.start && event.start.tz ? event.start.tz : localTimezone;
 
-		// can cause problems with e.g. birthdays before 1900
-		if ((rule.options && rule.origOptions && rule.origOptions.dtstart && rule.origOptions.dtstart.getFullYear() < 1900) || (rule.options && rule.options.dtstart && rule.options.dtstart.getFullYear() < 1900)) {
+		// rrule.js interprets years < 1900 as offsets from 1900 which breaks parsing for
+		// some imported calendars (notably Google birthday calendars). Normalise those
+		// values before we expand the recurrence window.
+		if (rule.origOptions?.dtstart instanceof Date && rule.origOptions.dtstart.getFullYear() < 1900) {
 			rule.origOptions.dtstart.setYear(1900);
+		}
+		if (rule.options?.dtstart instanceof Date && rule.options.dtstart.getFullYear() < 1900) {
 			rule.options.dtstart.setYear(1900);
 		}
 
-		// subtract the max of the duration of this event or 1 day to find events in the past that are currently still running and should therefor be displayed.
-		const oneDayInMs = 24 * 60 * 60000;
-		let searchFromDate = pastLocalMoment.clone().subtract(Math.max(durationInMs, oneDayInMs), "milliseconds").toDate();
-		let searchToDate = futureLocalMoment.clone().add(1, "days").toDate();
+		// Expand the search window by the event duration (or a full day) so ongoing recurrences are included.
+		// Without this buffer a long-running recurrence that already started before "pastLocalMoment"
+		// would be skipped even though it is still active.
+		const oneDayInMs = 24 * 60 * 60 * 1000;
+		const searchWindowMs = Math.max(durationInMs, oneDayInMs);
+		const searchFromDate = pastLocalMoment.clone().subtract(searchWindowMs, "milliseconds").toDate();
+		const searchToDate = futureLocalMoment.clone().add(1, "days").toDate();
 		Log.debug(`Search for recurring events between: ${searchFromDate} and ${searchToDate}`);
 
-		// if until is set, and its a full day event, force the time to midnight. rrule gets confused with non-00 offset
-		// looks like MS Outlook sets the until time incorrectly for fullday events
-		if ((rule.options.until !== undefined) && CalendarFetcherUtils.isFullDayEvent(event)) {
+		if (isFullDay && rule.options && rule.options.until) {
+			// node-ical supplies "until" in UTC for all-day events; push the date to the end of
+			// that day so the last occurrence is part of the set we request from rrule.js.
 			Log.debug("fixup rrule until");
 			rule.options.until = moment(rule.options.until).clone().startOf("day").add(1, "day")
 				.toDate();
 		}
 
-		Log.debug("fix rrule start=", rule.options.dtstart);
+		Log.debug("fix rrule start=", rule.options?.dtstart);
 		Log.debug("event before rrule.between=", JSON.stringify(event, null, 2), "exdates=", event.exdate);
-
 		Log.debug(`RRule: ${rule.toString()}`);
-		rule.options.tzid = null; // RRule gets *very* confused with timezones
 
-		let dates = rule.between(searchFromDate, searchToDate, true, () => {
-			return true;
+		if (rule.options) {
+			// Let moment.js handle the timezone conversion afterwards. Keeping tzid here lets
+			// rrule.js double adjust the times which causes one-day drifts.
+			rule.options.tzid = null;
+		}
+
+		const rawDates = rule.between(searchFromDate, searchToDate, true, () => true) || [];
+		Log.debug(`Title: ${event.summary}, with dates: \n\n${JSON.stringify(rawDates)}\n`);
+
+		const validDates = rawDates.filter(Boolean);
+		return validDates.map((date) => {
+			const baseUtcMoment = moment.tz(date, "UTC");
+			if (isFullDay) {
+				// Convert the UTC timestamp into the configured event timezone and clamp to the
+				// start of that day so the calendar date stays consistent across viewer timezones.
+				return baseUtcMoment.clone().tz(eventTimezone).startOf("day");
+			}
+			if (event.start && event.start.tz) {
+				// Preserve the original start timezone when the ICS explicitly defines one.
+				return baseUtcMoment.clone().tz(event.start.tz, true);
+			}
+			// Fallback: render in the viewer's local timezone while keeping the absolute instant.
+			return baseUtcMoment.clone().tz(localTimezone, true);
 		});
-
-		Log.debug(`Title: ${event.summary}, with dates: \n\n${JSON.stringify(dates)}\n`);
-
-		// shouldn't need this  anymore, as RRULE not passed junk
-		dates = dates.filter((d) => {
-			return JSON.stringify(d) !== "null";
-		});
-
-		// Dates are returned in UTC timezone but with localdatetime because tzid is null.
-		// So we map the date to a moment using the original timezone of the event.
-		return dates.map((d) => (event.start.tz ? moment.tz(d, "UTC").tz(event.start.tz, true) : moment.tz(d, "UTC").tz(CalendarFetcherUtils.getLocalTimezone(), true)));
 	},
 
 	/**
