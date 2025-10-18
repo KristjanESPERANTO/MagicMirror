@@ -104,13 +104,13 @@ SUMMARY:Test
 TRANSP:OPAQUE
 END:VEVENT`);
 
-			const moments = CalendarFetcherUtils.getMomentsFromRecurringEvent(data["67e65a1d-b889-4451-8cab-5518cecb9c66"], moment(), moment().add(365, "days"));
+			const occurrences = CalendarFetcherUtils.getMomentsFromRecurringEvent(data["67e65a1d-b889-4451-8cab-5518cecb9c66"], moment(), moment().add(365, "days"));
 
-			const januaryFirst = moments.filter((m) => m.format("MM-DD") === "01-01");
-			const julyFirst = moments.filter((m) => m.format("MM-DD") === "07-01");
+			const januaryFirst = occurrences.filter((entry) => entry.occurrence.format("MM-DD") === "01-01");
+			const julyFirst = occurrences.filter((entry) => entry.occurrence.format("MM-DD") === "07-01");
 
-			expect(januaryFirst[0].toISOString(true)).toContain("09:00:00.000+01:00");
-			expect(julyFirst[0].toISOString(true)).toContain("09:00:00.000+02:00");
+			expect(januaryFirst[0].occurrence.toISOString(true)).toContain("09:00:00.000+01:00");
+			expect(julyFirst[0].occurrence.toISOString(true)).toContain("09:00:00.000+02:00");
 		});
 	});
 });

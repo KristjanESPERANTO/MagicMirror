@@ -589,12 +589,13 @@ Module.register("calendar", {
 	 * @returns {moment.Moment} moment with a timezone
 	 */
 	timestampToMoment (timestamp, isFullDayEvent = false, floatingDate = null) {
-		const viewerOffsetMinutes = -new Date().getTimezoneOffset();
+		const viewerTimezone = moment.tz.guess();
 		if (isFullDayEvent && floatingDate) {
-			return moment(floatingDate, "YYYY-MM-DD").utcOffset(viewerOffsetMinutes, true).startOf("day");
+			return moment.tz(floatingDate, "YYYY-MM-DD", viewerTimezone).startOf("day");
 		}
-		const baseMoment = moment(timestamp, "x").utc();
-		return baseMoment.clone().utcOffset(viewerOffsetMinutes, isFullDayEvent);
+		const timestampMs = parseInt(timestamp, 10);
+		const baseMoment = moment.utc(timestampMs);
+		return baseMoment.clone().tz(viewerTimezone, isFullDayEvent);
 	},
 
 	/**
