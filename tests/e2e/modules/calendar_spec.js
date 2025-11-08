@@ -1,9 +1,9 @@
+const { expect } = require("playwright/test");
 const helpers = require("../helpers/global-setup");
 const serverBasicAuth = require("../helpers/basic-auth");
 
-const getPage = () => helpers.getPage();
-
 describe("Calendar module", () => {
+	let page;
 
 	/**
 	 * Assert the number of matching elements.
@@ -13,29 +13,17 @@ describe("Calendar module", () => {
 	 * @returns {Promise<boolean>} assertion outcome
 	 */
 	const testElementLength = async (selector, expectedLength, not) => {
-		const locator = getPage().locator(selector);
-		if (expectedLength === 0 && not !== "not") {
-			const count = await locator.count();
-			expect(count).toBe(0);
-			return true;
-		}
-
-		await locator.first().waitFor({ state: "attached" });
-		const count = await locator.count();
+		const locator = page.locator(selector);
 		if (not === "not") {
-			expect(count).not.toBe(expectedLength);
+			await expect(locator).not.toHaveCount(expectedLength);
 		} else {
-			expect(count).toBe(expectedLength);
+			await expect(locator).toHaveCount(expectedLength);
 		}
 		return true;
 	};
 
 	const testTextContain = async (selector, expectedText) => {
-		const locator = await helpers.waitForElement(selector, "undefinedLoading");
-		expect(locator).not.toBeNull();
-		const text = await locator.textContent();
-		expect(text).not.toBeNull();
-		expect(text).toContain(expectedText);
+		await expect(page.locator(selector).first()).toContainText(expectedText);
 		return true;
 	};
 
@@ -47,6 +35,7 @@ describe("Calendar module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/calendar/default.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("should show the default maximumEntries of 10", async () => {
@@ -62,6 +51,7 @@ describe("Calendar module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/calendar/custom.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("should show the custom maximumEntries of 5", async () => {
@@ -93,6 +83,7 @@ describe("Calendar module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/calendar/recurring.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("should show the recurring birthday event 6 times", async () => {
@@ -105,6 +96,7 @@ describe("Calendar module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/calendar/long-fullday-event.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("should contain text 'Ends in' with the left days", async () => {
@@ -121,6 +113,7 @@ describe("Calendar module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/calendar/single-fullday-event.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("should contain text 'Today'", async () => {
@@ -136,6 +129,7 @@ describe("Calendar module", () => {
 			await helpers.startApplication("tests/configs/modules/calendar/changed-port.js");
 			serverBasicAuth.listen(8010);
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		afterAll(async () => {
@@ -151,6 +145,7 @@ describe("Calendar module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/calendar/basic-auth.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("should return TestEvents", async () => {
@@ -162,6 +157,7 @@ describe("Calendar module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/calendar/auth-default.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("should return TestEvents", async () => {
@@ -173,6 +169,7 @@ describe("Calendar module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/calendar/old-basic-auth.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("should return TestEvents", async () => {
@@ -185,6 +182,7 @@ describe("Calendar module", () => {
 			await helpers.startApplication("tests/configs/modules/calendar/fail-basic-auth.js");
 			serverBasicAuth.listen(8020);
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		afterAll(async () => {

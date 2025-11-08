@@ -1,6 +1,9 @@
+const { expect } = require("playwright/test");
 const helpers = require("../helpers/global-setup");
 
 describe("Test helloworld module", () => {
+	let page;
+
 	afterAll(async () => {
 		await helpers.stopApplication();
 	});
@@ -9,14 +12,11 @@ describe("Test helloworld module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/helloworld/helloworld.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("Test message helloworld module", async () => {
-			const elem = await helpers.waitForElement(".helloworld");
-			expect(elem).not.toBeNull();
-			const text = await elem.textContent();
-			expect(text).not.toBeNull();
-			expect(text).toContain("Test HelloWorld Module");
+			await expect(page.locator(".helloworld")).toContainText("Test HelloWorld Module");
 		});
 	});
 
@@ -24,14 +24,11 @@ describe("Test helloworld module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/helloworld/helloworld_default.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("Test message helloworld module", async () => {
-			const elem = await helpers.waitForElement(".helloworld");
-			expect(elem).not.toBeNull();
-			const text = await elem.textContent();
-			expect(text).not.toBeNull();
-			expect(text).toContain("Hello World!");
+			await expect(page.locator(".helloworld")).toContainText("Hello World!");
 		});
 	});
 });

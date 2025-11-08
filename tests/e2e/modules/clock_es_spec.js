@@ -1,6 +1,9 @@
+const { expect } = require("playwright/test");
 const helpers = require("../helpers/global-setup");
 
 describe("Clock set to spanish language module", () => {
+	let page;
+
 	afterAll(async () => {
 		await helpers.stopApplication();
 	});
@@ -9,24 +12,17 @@ describe("Clock set to spanish language module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/clock/es/clock_24hr.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("shows date with correct format", async () => {
 			const dateRegex = /^(?:lunes|martes|miércoles|jueves|viernes|sábado|domingo), \d{1,2} de (?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre) de \d{4}$/;
-			const elem = await helpers.waitForElement(".clock .date");
-			expect(elem).not.toBeNull();
-			const text = await elem.textContent();
-			expect(text).not.toBeNull();
-			expect(text).toMatch(dateRegex);
+			await expect(page.locator(".clock .date")).toHaveText(dateRegex);
 		});
 
 		it("shows time in 24hr format", async () => {
 			const timeRegex = /^(?:2[0-3]|[01]\d):[0-5]\d[0-5]\d$/;
-			const elem = await helpers.waitForElement(".clock .time");
-			expect(elem).not.toBeNull();
-			const text = await elem.textContent();
-			expect(text).not.toBeNull();
-			expect(text).toMatch(timeRegex);
+			await expect(page.locator(".clock .time")).toHaveText(timeRegex);
 		});
 	});
 
@@ -34,24 +30,17 @@ describe("Clock set to spanish language module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/clock/es/clock_12hr.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("shows date with correct format", async () => {
 			const dateRegex = /^(?:lunes|martes|miércoles|jueves|viernes|sábado|domingo), \d{1,2} de (?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre) de \d{4}$/;
-			const elem = await helpers.waitForElement(".clock .date");
-			expect(elem).not.toBeNull();
-			const text = await elem.textContent();
-			expect(text).not.toBeNull();
-			expect(text).toMatch(dateRegex);
+			await expect(page.locator(".clock .date")).toHaveText(dateRegex);
 		});
 
 		it("shows time in 12hr format", async () => {
 			const timeRegex = /^(?:1[0-2]|[1-9]):[0-5]\d[0-5]\d[ap]m$/;
-			const elem = await helpers.waitForElement(".clock .time");
-			expect(elem).not.toBeNull();
-			const text = await elem.textContent();
-			expect(text).not.toBeNull();
-			expect(text).toMatch(timeRegex);
+			await expect(page.locator(".clock .time")).toHaveText(timeRegex);
 		});
 	});
 
@@ -59,15 +48,12 @@ describe("Clock set to spanish language module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/clock/es/clock_showPeriodUpper.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("shows 12hr time with upper case AM/PM", async () => {
 			const timeRegex = /^(?:1[0-2]|[1-9]):[0-5]\d[0-5]\d[AP]M$/;
-			const elem = await helpers.waitForElement(".clock .time");
-			expect(elem).not.toBeNull();
-			const text = await elem.textContent();
-			expect(text).not.toBeNull();
-			expect(text).toMatch(timeRegex);
+			await expect(page.locator(".clock .time")).toHaveText(timeRegex);
 		});
 	});
 
@@ -75,15 +61,12 @@ describe("Clock set to spanish language module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/clock/es/clock_showWeek.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("shows week with correct format", async () => {
 			const weekRegex = /^Semana [0-9]{1,2}$/;
-			const elem = await helpers.waitForElement(".clock .week");
-			expect(elem).not.toBeNull();
-			const text = await elem.textContent();
-			expect(text).not.toBeNull();
-			expect(text).toMatch(weekRegex);
+			await expect(page.locator(".clock .week")).toHaveText(weekRegex);
 		});
 	});
 
@@ -91,15 +74,12 @@ describe("Clock set to spanish language module", () => {
 		beforeAll(async () => {
 			await helpers.startApplication("tests/configs/modules/clock/es/clock_showWeek_short.js");
 			await helpers.getDocument();
+			page = helpers.getPage();
 		});
 
 		it("shows week with correct format", async () => {
 			const weekRegex = /^S[0-9]{1,2}$/;
-			const elem = await helpers.waitForElement(".clock .week");
-			expect(elem).not.toBeNull();
-			const text = await elem.textContent();
-			expect(text).not.toBeNull();
-			expect(text).toMatch(weekRegex);
+			await expect(page.locator(".clock .week")).toHaveText(weekRegex);
 		});
 	});
 });

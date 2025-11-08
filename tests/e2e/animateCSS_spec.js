@@ -1,8 +1,11 @@
+const { expect } = require("playwright/test");
 const helpers = require("./helpers/global-setup");
 
 // Validate Animate.css integration for compliments module using class toggling.
 // We intentionally ignore computed animation styles (jsdom doesn't simulate real animations).
 describe("AnimateCSS integration Test", () => {
+	let page;
+
 	// Config variants under test
 	const TEST_CONFIG_ANIM = "tests/configs/modules/compliments/compliments_animateCSS.js";
 	const TEST_CONFIG_FALLBACK = "tests/configs/modules/compliments/compliments_animateCSS_fallbackToDefault.js"; // invalid animation names
@@ -11,13 +14,12 @@ describe("AnimateCSS integration Test", () => {
 
 	/**
 	 * Get the compliments container element (waits until available).
-	 * @returns {Promise<HTMLElement>} compliments root element
+	 * @returns {Promise<void>}
 	 */
 	async function getComplimentsElement () {
 		await helpers.getDocument();
-		const el = await helpers.waitForElement(".compliments");
-		expect(el).not.toBeNull();
-		return el;
+		page = helpers.getPage();
+		await expect(page.locator(".compliments")).toBeVisible();
 	}
 
 	/**
@@ -27,16 +29,12 @@ describe("AnimateCSS integration Test", () => {
 	 * @returns {Promise<boolean>} true if class detected in time
 	 */
 	async function waitForAnimationClass (cls, { timeout = 6000 } = {}) {
-		const start = Date.now();
-		while (Date.now() - start < timeout) {
-			if (await helpers.querySelector(`.compliments.animate__animated.${cls}`)) {
-				// small stability wait
-				await new Promise((r) => setTimeout(r, 50));
-				if (await helpers.querySelector(`.compliments.animate__animated.${cls}`)) return true;
-			}
-			await new Promise((r) => setTimeout(r, 100));
-		}
-		throw new Error(`Timeout waiting for class ${cls}`);
+		const locator = page.locator(`.compliments.animate__animated.${cls}`);
+		await locator.waitFor({ state: "attached", timeout });
+		// small stability wait
+		await new Promise((r) => setTimeout(r, 50));
+		await expect(locator).toBeAttached();
+		return true;
 	}
 
 	/**
@@ -46,8 +44,10 @@ describe("AnimateCSS integration Test", () => {
 	 */
 	async function assertNoAnimationWithin (ms = 2000) {
 		const start = Date.now();
+		const locator = page.locator(".compliments.animate__animated");
 		while (Date.now() - start < ms) {
-			if (await helpers.querySelector(".compliments.animate__animated")) {
+			const count = await locator.count();
+			if (count > 0) {
 				throw new Error("Unexpected animate__animated class present in non-animation scenario");
 			}
 			await new Promise((r) => setTimeout(r, 100));

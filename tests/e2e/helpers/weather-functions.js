@@ -1,16 +1,22 @@
 const { injectMockData, cleanupMockData } = require("../../utils/weather_mocker");
 const helpers = require("./global-setup");
 
-exports.getText = async (element, result) => {
-	const elem = await helpers.waitForElement(element);
-	expect(elem).not.toBeNull();
-	const rawText = await elem.textContent();
-	expect(rawText).not.toBeNull();
+/**
+ * Get normalized text from element (trimmed, no line breaks, single spaces)
+ * @param {import("playwright").Page} page Playwright page instance
+ * @param {string} selector css selector
+ * @param {string} expectedText expected text content
+ * @returns {Promise<boolean>} assertion outcome
+ */
+exports.getText = async (page, selector, expectedText) => {
+	const locator = page.locator(selector);
+	await locator.waitFor({ state: "visible" });
+	const rawText = await locator.textContent();
 	const content = rawText
 		.trim()
 		.replace(/(\r\n|\n|\r)/gm, "")
 		.replace(/[ ]+/g, " ");
-	expect(content).toBe(result);
+	expect(content).toBe(expectedText);
 	return true;
 };
 

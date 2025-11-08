@@ -146,57 +146,6 @@ exports.getDocument = async () => {
 	await openPage(url);
 };
 
-exports.waitForElement = async (selector, ignoreValue = "", timeout = 30000) => {
-	const currentPage = exports.getPage();
-	const locator = currentPage.locator(selector);
-	const deadline = Date.now() + timeout;
-
-	while (Date.now() <= deadline) {
-		const elements = await locator.all();
-		if (elements.length > 0) {
-			const firstElement = elements[0];
-			if (!ignoreValue) {
-				return firstElement;
-			}
-			const text = await firstElement.textContent();
-			if (!text || !text.includes(ignoreValue)) {
-				return firstElement;
-			}
-		}
-		// Wait a bit before retrying
-		await currentPage.waitForTimeout(100);
-	}
-
-	// If the loop completes without finding the element, it timed out.
-	return null;
-};
-
-exports.waitForAllElements = async (selector, timeout = 30000) => {
-	const currentPage = exports.getPage();
-	const locator = currentPage.locator(selector);
-
-	try {
-		// Wait for at least one element to be attached before returning all of them.
-		await locator.first().waitFor({ state: "attached", timeout });
-	} catch {
-		// If no element is found within the timeout, return an empty array.
-		return [];
-	}
-
-	// Playwright's .all() returns an array of locators, similar to a NodeList.
-	return await locator.all();
-};
-
-exports.querySelector = async (selector) => {
-	const locator = exports.getPage().locator(selector);
-	return (await locator.count()) > 0 ? locator.first() : null;
-};
-
-exports.querySelectorAll = async (selector) => {
-	const locator = exports.getPage().locator(selector);
-	return await locator.all();
-};
-
 exports.fixupIndex = async () => {
 	// read and save the git level index file
 	indexData = (await fs.promises.readFile(indexFile)).toString();
