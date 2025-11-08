@@ -4,6 +4,7 @@ import {flatConfigs as importX} from "eslint-plugin-import-x";
 import js from "@eslint/js";
 import jsdocPlugin from "eslint-plugin-jsdoc";
 import packageJson from "eslint-plugin-package-json";
+import playwright from "eslint-plugin-playwright";
 import stylistic from "@stylistic/eslint-plugin";
 import vitest from "eslint-plugin-vitest";
 
@@ -138,6 +139,13 @@ export default defineConfig([
 		files: ["tests/configs/modules/weather/*.js"],
 		rules: {
 			"@stylistic/quotes": "off"
+		}
+	},
+	{
+		files: ["tests/e2e/**/*.js"],
+		extends: [playwright.configs["flat/recommended"]],
+		rules: {
+			"playwright/no-standalone-expect": "off"
 		}
 	}
 ]);

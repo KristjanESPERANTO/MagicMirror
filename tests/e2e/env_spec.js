@@ -24,7 +24,6 @@ describe("App environment", () => {
 	});
 
 	it("should show the title MagicMirror²", async () => {
-		const title = await page.locator("title").textContent();
-		expect(title).toBe("MagicMirror²");
+		await expect(page).toHaveTitle("MagicMirror²");
 	});
 });
