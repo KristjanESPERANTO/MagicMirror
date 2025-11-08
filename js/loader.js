@@ -33,7 +33,7 @@ const Loader = (function () {
 
 		// In production, fetch env vars from server
 		try {
-			const res = await fetch(`${config.basePath}env`);
+			const res = await fetch(new URL("env", `${location.origin}${config.basePath}`));
 			return JSON.parse(await res.text());
 		} catch (error) {
 			// Fallback to config values if server fetch fails
