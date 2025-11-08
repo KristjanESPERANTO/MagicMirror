@@ -64,32 +64,41 @@ exports.startApplication = async (configFilename, exec) => {
 };
 
 exports.stopApplication = async (waitTime = 100) => {
-	if (global.window) {
-		// no closing causes test errors and memory leaks
-		global.window.close();
-		delete global.window;
-	}
-
 	if (!global.app) {
+		if (global.window) {
+			global.window.close();
+			delete global.window;
+		}
 		delete global.testPort;
 		return Promise.resolve();
 	}
 
+	// Stop server first
 	await global.app.stop();
 	delete global.app;
 	delete global.testPort;
 
-	// Small delay to ensure clean shutdown
+	// Wait for any pending async operations to complete before closing DOM
 	await new Promise((resolve) => setTimeout(resolve, waitTime));
+
+	if (global.window) {
+		// Close window after async operations have settled
+		global.window.close();
+		delete global.window;
+		delete global.document;
+	}
 };
 
 exports.getDocument = () => {
 	return new Promise((resolve) => {
 		const port = global.testPort || config.port || 8080;
-		const url = `http://${config.address || "localhost"}:${port}`;
+		// JSDOM requires localhost instead of 0.0.0.0 for URL resolution
+		const address = config.address === "0.0.0.0" ? "localhost" : config.address || "localhost";
+		const url = `http://${address}:${port}`;
 		jsdom.JSDOM.fromURL(url, { resources: "usable", runScripts: "dangerously" }).then((dom) => {
 			dom.window.name = "jsdom";
 			global.window = dom.window;
+			global.document = dom.window.document;
 			// Following fixes `navigator is not defined` errors in e2e tests, found here
 			// https://www.appsloveworld.com/reactjs/100/37/mocha-react-navigator-is-not-defined
 			global.navigator = {
@@ -97,7 +106,6 @@ exports.getDocument = () => {
 			};
 			dom.window.fetch = fetch;
 			dom.window.onload = () => {
-				global.document = dom.window.document;
 				resolve();
 			};
 		});
