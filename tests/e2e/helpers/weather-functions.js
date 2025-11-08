@@ -5,7 +5,8 @@ exports.getText = async (element, result) => {
 	const elem = await helpers.waitForElement(element);
 	expect(elem).not.toBeNull();
 	const rawText = await elem.textContent();
-	const content = (rawText ?? "")
+	expect(rawText).not.toBeNull();
+	const content = rawText
 		.trim()
 		.replace(/(\r\n|\n|\r)/gm, "")
 		.replace(/[ ]+/g, " ");
