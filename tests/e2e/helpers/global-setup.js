@@ -197,12 +197,7 @@ exports.querySelector = async (selector) => {
 
 exports.querySelectorAll = async (selector) => {
 	const locator = exports.getPage().locator(selector);
-	const count = await locator.count();
-	const elements = [];
-	for (let i = 0; i < count; i++) {
-		elements.push(locator.nth(i));
-	}
-	return elements;
+	return await locator.all();
 };
 
 exports.fixupIndex = async () => {
