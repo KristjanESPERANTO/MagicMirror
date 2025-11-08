@@ -146,48 +146,45 @@ exports.getDocument = async () => {
 	await openPage(url);
 };
 
-exports.waitForElement = async (selector, ignoreValue = "", timeout = 0) => {
+exports.waitForElement = async (selector, ignoreValue = "", timeout = 30000) => {
 	const currentPage = exports.getPage();
 	const locator = currentPage.locator(selector);
-	const effectiveTimeout = timeout && timeout > 0 ? timeout : 30000;
-	const deadline = Date.now() + effectiveTimeout;
+	const deadline = Date.now() + timeout;
 
 	while (Date.now() <= deadline) {
-		const count = await locator.count();
-		if (count > 0) {
+		const elements = await locator.all();
+		if (elements.length > 0) {
+			const firstElement = elements[0];
 			if (!ignoreValue) {
-				return locator.first();
+				return firstElement;
 			}
-			const text = await locator.first().textContent();
+			const text = await firstElement.textContent();
 			if (!text || !text.includes(ignoreValue)) {
-				return locator.first();
+				return firstElement;
 			}
 		}
+		// Wait a bit before retrying
 		await currentPage.waitForTimeout(100);
 	}
 
+	// If the loop completes without finding the element, it timed out.
 	return null;
 };
 
 exports.waitForAllElements = async (selector, timeout = 30000) => {
 	const currentPage = exports.getPage();
 	const locator = currentPage.locator(selector);
-	const effectiveTimeout = timeout && timeout > 0 ? timeout : 30000;
-	const deadline = Date.now() + effectiveTimeout;
 
-	while (Date.now() <= deadline) {
-		const count = await locator.count();
-		if (count > 0) {
-			const elements = [];
-			for (let i = 0; i < count; i++) {
-				elements.push(locator.nth(i));
-			}
-			return elements;
-		}
-		await currentPage.waitForTimeout(100);
+	try {
+		// Wait for at least one element to be attached before returning all of them.
+		await locator.first().waitFor({ state: "attached", timeout });
+	} catch {
+		// If no element is found within the timeout, return an empty array.
+		return [];
 	}
 
-	return [];
+	// Playwright's .all() returns an array of locators, similar to a NodeList.
+	return await locator.all();
 };
 
 exports.querySelector = async (selector) => {
