@@ -105,9 +105,7 @@ exports.getDocument = () => {
 				useragent: "node.js"
 			};
 			dom.window.fetch = fetch;
-			dom.window.onload = () => {
-				resolve();
-			};
+			resolve();
 		});
 	});
 };
