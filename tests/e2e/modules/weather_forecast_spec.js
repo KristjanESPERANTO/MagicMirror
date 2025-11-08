@@ -18,38 +18,40 @@ describe("Weather module: Weather Forecast", () => {
 		const days = ["Today", "Tomorrow", "Sun", "Mon", "Tue"];
 		for (const [index, day] of days.entries()) {
 			it(`should render day ${day}`, async () => {
-				await expect(page.locator(`.weather table.small tr:nth-child(${index + 1}) td:nth-child(1)`)).toHaveText(day);
+				const dayCell = page.locator(`.weather table.small tr:nth-child(${index + 1}) td:nth-child(1)`);
+				await expect(dayCell).toHaveText(day);
 			});
 		}
 
 		const icons = ["day-cloudy", "rain", "day-sunny", "day-sunny", "day-sunny"];
 		for (const [index, icon] of icons.entries()) {
 			it(`should render icon ${icon}`, async () => {
-				await expect(page.locator(`.weather table.small tr:nth-child(${index + 1}) td:nth-child(2) span.wi-${icon}`)).toBeVisible();
+				const iconElement = page.locator(`.weather table.small tr:nth-child(${index + 1}) td:nth-child(2) span.wi-${icon}`);
+				await expect(iconElement).toBeVisible();
 			});
 		}
 
 		const maxTemps = ["24.4°", "21.0°", "22.9°", "23.4°", "20.6°"];
 		for (const [index, temp] of maxTemps.entries()) {
 			it(`should render max temperature ${temp}`, async () => {
-				await expect(page.locator(`.weather table.small tr:nth-child(${index + 1}) td:nth-child(3)`)).toHaveText(temp);
+				const maxTempCell = page.locator(`.weather table.small tr:nth-child(${index + 1}) td:nth-child(3)`);
+				await expect(maxTempCell).toHaveText(temp);
 			});
 		}
 
 		const minTemps = ["15.3°", "13.6°", "13.8°", "13.9°", "10.9°"];
 		for (const [index, temp] of minTemps.entries()) {
 			it(`should render min temperature ${temp}`, async () => {
-				await expect(page.locator(`.weather table.small tr:nth-child(${index + 1}) td:nth-child(4)`)).toHaveText(temp);
+				const minTempCell = page.locator(`.weather table.small tr:nth-child(${index + 1}) td:nth-child(4)`);
+				await expect(minTempCell).toHaveText(temp);
 			});
 		}
 
 		const opacities = [1, 1, 0.8, 0.5333333333333333, 0.2666666666666667];
 		for (const [index, opacity] of opacities.entries()) {
 			it(`should render fading of rows with opacity=${opacity}`, async () => {
-				const locator = page.locator(`.weather table.small tr:nth-child(${index + 1})`);
-				await locator.waitFor({ state: "visible" });
-				const html = await locator.evaluate((node) => node.outerHTML);
-				expect(html).toContain(`style="opacity: ${opacity};"`);
+				const row = page.locator(`.weather table.small tr:nth-child(${index + 1})`);
+				await expect(row).toHaveAttribute("style", `opacity: ${opacity};`);
 			});
 		}
 	});
@@ -63,7 +65,8 @@ describe("Weather module: Weather Forecast", () => {
 		const days = ["Fri", "Sat", "Sun", "Mon", "Tue"];
 		for (const [index, day] of days.entries()) {
 			it(`should render day ${day}`, async () => {
-				await expect(page.locator(`.weather table.small tr:nth-child(${index + 1}) td:nth-child(1)`)).toHaveText(day);
+				const dayCell = page.locator(`.weather table.small tr:nth-child(${index + 1}) td:nth-child(1)`);
+				await expect(dayCell).toHaveText(day);
 			});
 		}
 	});
@@ -87,7 +90,8 @@ describe("Weather module: Weather Forecast", () => {
 		for (const [index, precipitation] of precipitations.entries()) {
 			if (precipitation) {
 				it(`should render precipitation amount ${precipitation}`, async () => {
-					await expect(page.locator(`.weather table tr:nth-child(${index + 1}) td.precipitation-amount`)).toHaveText(precipitation);
+					const precipCell = page.locator(`.weather table tr:nth-child(${index + 1}) td.precipitation-amount`);
+					await expect(precipCell).toHaveText(precipitation);
 				});
 			}
 		}
@@ -103,7 +107,8 @@ describe("Weather module: Weather Forecast", () => {
 			const temperatures = ["75_9°", "69_8°", "73_2°", "74_1°", "69_1°"];
 			for (const [index, temp] of temperatures.entries()) {
 				it(`should render custom decimalSymbol = '_' for temp ${temp}`, async () => {
-					await expect(page.locator(`.weather table.small tr:nth-child(${index + 1}) td:nth-child(3)`)).toHaveText(temp);
+					const tempCell = page.locator(`.weather table.small tr:nth-child(${index + 1}) td:nth-child(3)`);
+					await expect(tempCell).toHaveText(temp);
 				});
 			}
 		});
@@ -113,7 +118,8 @@ describe("Weather module: Weather Forecast", () => {
 			for (const [index, precipitation] of precipitations.entries()) {
 				if (precipitation) {
 					it(`should render precipitation amount ${precipitation}`, async () => {
-						await expect(page.locator(`.weather table.small tr:nth-child(${index + 1}) td.precipitation-amount`)).toHaveText(precipitation);
+						const precipCell = page.locator(`.weather table.small tr:nth-child(${index + 1}) td.precipitation-amount`);
+						await expect(precipCell).toHaveText(precipitation);
 					});
 				}
 			}

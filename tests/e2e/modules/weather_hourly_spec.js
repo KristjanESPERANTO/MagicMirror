@@ -61,11 +61,11 @@ describe("Weather module: Weather Hourly Forecast", () => {
 
 		describe("Shows precipitation probability", () => {
 			const probabilities = [undefined, undefined, "12 %", "36 %", "44 %"];
-			for (const [index, pop] of probabilities.entries()) {
-				if (pop) {
-					it(`should render probability ${pop}`, async () => {
+			for (const [index, probability] of probabilities.entries()) {
+				if (probability) {
+					it(`should render probability ${probability}`, async () => {
 						const probabilityCell = page.locator(`.weather table.small tr:nth-child(${index + 1}) td.precipitation-prob`);
-						await expect(probabilityCell).toHaveText(pop);
+						await expect(probabilityCell).toHaveText(probability);
 					});
 				}
 			}

@@ -60,10 +60,8 @@ describe("Weather module", () => {
 		});
 
 		it("should render windDirection with an arrow", async () => {
-			const locator = page.locator(".weather .normal.medium sup i.fa-long-arrow-alt-down");
-			await locator.waitFor({ state: "visible" });
-			const html = await locator.evaluate((node) => node.outerHTML);
-			expect(html).toContain("transform:rotate(250deg)");
+			const arrow = page.locator(".weather .normal.medium sup i.fa-long-arrow-alt-down");
+			await expect(arrow).toHaveAttribute("style", "transform:rotate(250deg)");
 		});
 
 		it("should render humidity next to wind", async () => {
