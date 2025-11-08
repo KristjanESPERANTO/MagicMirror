@@ -1,6 +1,7 @@
 const path = require("node:path");
 const os = require("node:os");
 const fs = require("node:fs");
+const { once } = require("node:events");
 const jsdom = require("jsdom");
 
 // global absolute root path
@@ -89,25 +90,28 @@ exports.stopApplication = async (waitTime = 100) => {
 	}
 };
 
-exports.getDocument = () => {
-	return new Promise((resolve) => {
-		const port = global.testPort || config.port || 8080;
-		// JSDOM requires localhost instead of 0.0.0.0 for URL resolution
-		const address = config.address === "0.0.0.0" ? "localhost" : config.address || "localhost";
-		const url = `http://${address}:${port}`;
-		jsdom.JSDOM.fromURL(url, { resources: "usable", runScripts: "dangerously" }).then((dom) => {
-			dom.window.name = "jsdom";
-			global.window = dom.window;
-			global.document = dom.window.document;
-			// Following fixes `navigator is not defined` errors in e2e tests, found here
-			// https://www.appsloveworld.com/reactjs/100/37/mocha-react-navigator-is-not-defined
-			global.navigator = {
-				useragent: "node.js"
-			};
-			dom.window.fetch = fetch;
-			resolve();
-		});
-	});
+exports.getDocument = async () => {
+	const port = global.testPort || config.port || 8080;
+	// JSDOM requires localhost instead of 0.0.0.0 for URL resolution
+	const address = config.address === "0.0.0.0" ? "localhost" : config.address || "localhost";
+	const url = `http://${address}:${port}`;
+
+	const dom = await jsdom.JSDOM.fromURL(url, { resources: "usable", runScripts: "dangerously" });
+
+	dom.window.name = "jsdom";
+	global.window = dom.window;
+	global.document = dom.window.document;
+	// Some modules access navigator.*, so provide a minimal stub for JSDOM-based tests.
+	global.navigator = {
+		useragent: "node.js"
+	};
+	dom.window.fetch = fetch;
+
+	// fromURL() resolves when HTML is loaded, but with resources: "usable",
+	// external scripts load asynchronously. Wait for the load event to ensure scripts are executed.
+	if (dom.window.document.readyState !== "complete") {
+		await once(dom.window, "load");
+	}
 };
 
 exports.waitForElement = (selector, ignoreValue = "", timeout = 0) => {
