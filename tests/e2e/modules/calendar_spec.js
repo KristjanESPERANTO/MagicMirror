@@ -10,7 +10,7 @@ describe("Calendar module", () => {
 	 * @param {string} selector css selector
 	 * @param {number} expectedLength expected number of elements
 	 * @param {string} [not] optional negation marker (use "not" to negate)
-	 * @returns {Promise<boolean>} assertion outcome
+	 * @returns {Promise<void>}
 	 */
 	const testElementLength = async (selector, expectedLength, not) => {
 		const locator = page.locator(selector);
@@ -19,12 +19,10 @@ describe("Calendar module", () => {
 		} else {
 			await expect(locator).toHaveCount(expectedLength);
 		}
-		return true;
 	};
 
 	const testTextContain = async (selector, expectedText) => {
 		await expect(page.locator(selector).first()).toContainText(expectedText);
-		return true;
 	};
 
 	afterAll(async () => {
@@ -39,11 +37,11 @@ describe("Calendar module", () => {
 		});
 
 		it("should show the default maximumEntries of 10", async () => {
-			await expect(testElementLength(".calendar .event", 10)).resolves.toBe(true);
+			await testElementLength(".calendar .event", 10);
 		});
 
 		it("should show the default calendar symbol in each event", async () => {
-			await expect(testElementLength(".calendar .event .fa-calendar-days", 0, "not")).resolves.toBe(true);
+			await testElementLength(".calendar .event .fa-calendar-days", 0, "not");
 		});
 	});
 
@@ -55,27 +53,27 @@ describe("Calendar module", () => {
 		});
 
 		it("should show the custom maximumEntries of 5", async () => {
-			await expect(testElementLength(".calendar .event", 5)).resolves.toBe(true);
+			await testElementLength(".calendar .event", 5);
 		});
 
 		it("should show the custom calendar symbol in four events", async () => {
-			await expect(testElementLength(".calendar .event .fa-birthday-cake", 4)).resolves.toBe(true);
+			await testElementLength(".calendar .event .fa-birthday-cake", 4);
 		});
 
 		it("should show a customEvent calendar symbol in one event", async () => {
-			await expect(testElementLength(".calendar .event .fa-dice", 1)).resolves.toBe(true);
+			await testElementLength(".calendar .event .fa-dice", 1);
 		});
 
 		it("should show a customEvent calendar eventClass in one event", async () => {
-			await expect(testElementLength(".calendar .event.undo", 1)).resolves.toBe(true);
+			await testElementLength(".calendar .event.undo", 1);
 		});
 
 		it("should show two custom icons for repeating events", async () => {
-			await expect(testElementLength(".calendar .event .fa-undo", 2)).resolves.toBe(true);
+			await testElementLength(".calendar .event .fa-undo", 2);
 		});
 
 		it("should show two custom icons for day events", async () => {
-			await expect(testElementLength(".calendar .event .fa-calendar-day", 2)).resolves.toBe(true);
+			await testElementLength(".calendar .event .fa-calendar-day", 2);
 		});
 	});
 
@@ -87,7 +85,7 @@ describe("Calendar module", () => {
 		});
 
 		it("should show the recurring birthday event 6 times", async () => {
-			await expect(testElementLength(".calendar .event", 6)).resolves.toBe(true);
+			await testElementLength(".calendar .event", 6);
 		});
 	});
 
@@ -100,12 +98,12 @@ describe("Calendar module", () => {
 		});
 
 		it("should contain text 'Ends in' with the left days", async () => {
-			await expect(testTextContain(".calendar .today .time", "Ends in")).resolves.toBe(true);
-			await expect(testTextContain(".calendar .yesterday .time", "Today")).resolves.toBe(true);
-			await expect(testTextContain(".calendar .tomorrow .time", "Tomorrow")).resolves.toBe(true);
+			await testTextContain(".calendar .today .time", "Ends in");
+			await testTextContain(".calendar .yesterday .time", "Today");
+			await testTextContain(".calendar .tomorrow .time", "Tomorrow");
 		});
 		it("should contain in total three events", async () => {
-			await expect(testElementLength(".calendar .event", 3)).resolves.toBe(true);
+			await testElementLength(".calendar .event", 3);
 		});
 	});
 
@@ -117,10 +115,10 @@ describe("Calendar module", () => {
 		});
 
 		it("should contain text 'Today'", async () => {
-			await expect(testTextContain(".calendar .time", "Today")).resolves.toBe(true);
+			await testTextContain(".calendar .time", "Today");
 		});
 		it("should contain in total two events", async () => {
-			await expect(testElementLength(".calendar .event", 2)).resolves.toBe(true);
+			await testElementLength(".calendar .event", 2);
 		});
 	});
 
@@ -137,7 +135,7 @@ describe("Calendar module", () => {
 		});
 
 		it("should return TestEvents", async () => {
-			await expect(testElementLength(".calendar .event", 0, "not")).resolves.toBe(true);
+			await testElementLength(".calendar .event", 0, "not");
 		});
 	});
 
@@ -149,7 +147,7 @@ describe("Calendar module", () => {
 		});
 
 		it("should return TestEvents", async () => {
-			await expect(testElementLength(".calendar .event", 0, "not")).resolves.toBe(true);
+			await testElementLength(".calendar .event", 0, "not");
 		});
 	});
 
@@ -161,7 +159,7 @@ describe("Calendar module", () => {
 		});
 
 		it("should return TestEvents", async () => {
-			await expect(testElementLength(".calendar .event", 0, "not")).resolves.toBe(true);
+			await testElementLength(".calendar .event", 0, "not");
 		});
 	});
 
@@ -173,7 +171,7 @@ describe("Calendar module", () => {
 		});
 
 		it("should return TestEvents", async () => {
-			await expect(testElementLength(".calendar .event", 0, "not")).resolves.toBe(true);
+			await testElementLength(".calendar .event", 0, "not");
 		});
 	});
 
@@ -190,7 +188,7 @@ describe("Calendar module", () => {
 		});
 
 		it("should show Unauthorized error", async () => {
-			await expect(testTextContain(".calendar", "Error in the calendar module. Authorization failed")).resolves.toBe(true);
+			await testTextContain(".calendar", "Error in the calendar module. Authorization failed");
 		});
 	});
 });

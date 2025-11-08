@@ -59,6 +59,20 @@ export default defineConfig([
 			"import-x/order": "error",
 			"init-declarations": "off",
 			"vitest/consistent-test-it": "warn",
+			"vitest/expect-expect": [
+				"warn",
+				{
+					assertFunctionNames: [
+						"expect",
+						"testElementLength",
+						"testTextContain",
+						"doTest",
+						"runAnimationTest",
+						"waitForAnimationClass",
+						"assertNoAnimationWithin"
+					]
+				}
+			],
 			"vitest/prefer-to-be": "warn",
 			"vitest/prefer-to-have-length": "warn",
 			"max-lines-per-function": ["warn", 400],

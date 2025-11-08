@@ -7,7 +7,7 @@ describe("Compliments module", () => {
 	/**
 	 * move similar tests in function doTest
 	 * @param {Array} complimentsArray The array of compliments.
-	 * @returns {boolean} result
+	 * @returns {Promise<void>}
 	 */
 	const doTest = async (complimentsArray) => {
 		await expect(page.locator(".compliments")).toBeVisible();
@@ -15,7 +15,6 @@ describe("Compliments module", () => {
 		await contentLocator.waitFor({ state: "visible" });
 		const content = await contentLocator.textContent();
 		expect(complimentsArray).toContain(content);
-		return true;
 	};
 
 	afterAll(async () => {
@@ -31,7 +30,7 @@ describe("Compliments module", () => {
 			});
 
 			it("shows anytime because if configure empty parts of day compliments and set anytime compliments", async () => {
-				await expect(doTest(["Anytime here"])).resolves.toBe(true);
+				await doTest(["Anytime here"]);
 			});
 		});
 
@@ -43,7 +42,7 @@ describe("Compliments module", () => {
 			});
 
 			it("shows anytime compliments", async () => {
-				await expect(doTest(["Anytime here"])).resolves.toBe(true);
+				await doTest(["Anytime here"]);
 			});
 		});
 	});
@@ -56,7 +55,7 @@ describe("Compliments module", () => {
 		});
 
 		it("should show compliments from a remote file", async () => {
-			await expect(doTest(["Remote compliment file works!"])).resolves.toBe(true);
+			await doTest(["Remote compliment file works!"]);
 		});
 	});
 
@@ -69,7 +68,7 @@ describe("Compliments module", () => {
 			});
 
 			it("compliments array can contain all values", async () => {
-				await expect(doTest(["Special day message", "Typical message 1", "Typical message 2", "Typical message 3"])).resolves.toBe(true);
+				await doTest(["Special day message", "Typical message 1", "Typical message 2", "Typical message 3"]);
 			});
 		});
 
@@ -81,7 +80,7 @@ describe("Compliments module", () => {
 			});
 
 			it("compliments array contains only special value", async () => {
-				await expect(doTest(["Special day message"])).resolves.toBe(true);
+				await doTest(["Special day message"]);
 			});
 		});
 
@@ -93,7 +92,7 @@ describe("Compliments module", () => {
 			});
 
 			it("compliments array contains only special value", async () => {
-				await expect(doTest(["anytime cron"])).resolves.toBe(true);
+				await doTest(["anytime cron"]);
 			});
 		});
 	});
@@ -107,7 +106,7 @@ describe("Compliments module", () => {
 			});
 			it("shows 'Remote compliment file works!' as only anytime list set", async () => {
 				//await helpers.startApplication("tests/configs/modules/compliments/compliments_file.js", "01 Jan 2022 10:00:00 GMT");
-				await expect(doTest(["Remote compliment file works!"])).resolves.toBe(true);
+				await doTest(["Remote compliment file works!"]);
 			});
 			//			afterAll(async () =>{
 			//				await helpers.stopApplication()
@@ -122,9 +121,9 @@ describe("Compliments module", () => {
 			});
 			it("shows 'test in morning' as test time set to 10am", async () => {
 				//await helpers.startApplication("tests/configs/modules/compliments/compliments_file_change.js", "01 Jan 2022 10:00:00 GMT");
-				await expect(doTest(["Remote compliment file works!"])).resolves.toBe(true);
+				await doTest(["Remote compliment file works!"]);
 				await new Promise((r) => setTimeout(r, 10000));
-				await expect(doTest(["test in morning"])).resolves.toBe(true);
+				await doTest(["test in morning"]);
 			});
 			//			afterAll(async () =>{
 			//				await helpers.stopApplication()

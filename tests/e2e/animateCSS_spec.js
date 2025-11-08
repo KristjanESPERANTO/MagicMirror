@@ -26,7 +26,7 @@ describe("AnimateCSS integration Test", () => {
 	 * Wait for an Animate.css class to appear and persist briefly.
 	 * @param {string} cls Animation class name without leading dot (e.g. animate__flipInX)
 	 * @param {{timeout?: number}} [options] Poll timeout in ms (default 6000)
-	 * @returns {Promise<boolean>} true if class detected in time
+	 * @returns {Promise<void>}
 	 */
 	async function waitForAnimationClass (cls, { timeout = 6000 } = {}) {
 		const locator = page.locator(`.compliments.animate__animated.${cls}`);
@@ -34,7 +34,6 @@ describe("AnimateCSS integration Test", () => {
 		// small stability wait
 		await new Promise((r) => setTimeout(r, 50));
 		await expect(locator).toBeAttached();
-		return true;
 	}
 
 	/**
@@ -58,13 +57,13 @@ describe("AnimateCSS integration Test", () => {
 	 * Run one animation test scenario.
 	 * @param {string} [animationIn] Expected animate-in name
 	 * @param {string} [animationOut] Expected animate-out name
-	 * @returns {Promise<boolean>} true when scenario assertions pass
+	 * @returns {Promise<void>} Throws on assertion failure
 	 */
 	async function runAnimationTest (animationIn, animationOut) {
 		await getComplimentsElement();
 		if (!animationIn && !animationOut) {
 			await assertNoAnimationWithin(2000);
-			return true;
+			return;
 		}
 		if (animationIn) await waitForAnimationClass(`animate__${animationIn}`);
 		if (animationOut) {
@@ -72,7 +71,6 @@ describe("AnimateCSS integration Test", () => {
 			await new Promise((r) => setTimeout(r, 2100));
 			await waitForAnimationClass(`animate__${animationOut}`);
 		}
-		return true;
 	}
 
 	afterEach(async () => {
@@ -82,28 +80,28 @@ describe("AnimateCSS integration Test", () => {
 	describe("animateIn and animateOut Test", () => {
 		it("with flipInX and flipOutX animation", async () => {
 			await helpers.startApplication(TEST_CONFIG_ANIM);
-			await expect(runAnimationTest("flipInX", "flipOutX")).resolves.toBe(true);
+			await runAnimationTest("flipInX", "flipOutX");
 		});
 	});
 
 	describe("use animateOut name for animateIn (vice versa) Test", () => {
 		it("without animation (inverted names)", async () => {
 			await helpers.startApplication(TEST_CONFIG_INVERTED);
-			await expect(runAnimationTest()).resolves.toBe(true);
+			await runAnimationTest();
 		});
 	});
 
 	describe("false Animation name test", () => {
 		it("without animation (invalid names)", async () => {
 			await helpers.startApplication(TEST_CONFIG_FALLBACK);
-			await expect(runAnimationTest()).resolves.toBe(true);
+			await runAnimationTest();
 		});
 	});
 
 	describe("no Animation defined test", () => {
 		it("without animation (no config)", async () => {
 			await helpers.startApplication(TEST_CONFIG_NONE);
-			await expect(runAnimationTest()).resolves.toBe(true);
+			await runAnimationTest();
 		});
 	});
 });
