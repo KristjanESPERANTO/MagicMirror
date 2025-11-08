@@ -36,7 +36,7 @@
 		"config:check": "node js/check_config.js",
 		"postinstall": "git clean -df fonts vendor",
 		"install-mm": "npm install --no-audit --no-fund --no-update-notifier --only=prod --omit=dev",
-		"install-mm:dev": "npm install --no-audit --no-fund --no-update-notifier",
+		"install-mm:dev": "npm install --no-audit --no-fund --no-update-notifier && npx playwright install chromium",
 		"lint:css": "stylelint 'css/main.css' 'css/roboto.css' 'css/font-awesome.css' 'modules/default/**/*.css' --fix",
 		"lint:js": "eslint --fix",
 		"lint:markdown": "markdownlint-cli2 . --fix",
