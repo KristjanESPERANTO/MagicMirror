@@ -190,11 +190,6 @@ exports.waitForAllElements = async (selector, timeout = 30000) => {
 	return [];
 };
 
-exports.testMatch = async (selector, regex) => {
-	await exports.expectTextContent(selector, { matches: regex });
-	return true;
-};
-
 exports.querySelector = async (selector) => {
 	const locator = exports.getPage().locator(selector);
 	return (await locator.count()) > 0 ? locator.first() : null;
@@ -208,33 +203,6 @@ exports.querySelectorAll = async (selector) => {
 		elements.push(locator.nth(i));
 	}
 	return elements;
-};
-
-exports.expectTextContent = async (target, expectation) => {
-	if (!expectation || (expectation.equals === undefined && expectation.contains === undefined && expectation.matches === undefined)) {
-		throw new Error("expectTextContent expects an object with equals, contains, or matches");
-	}
-
-	let locator = target;
-	if (typeof target === "string") {
-		locator = await exports.waitForElement(target);
-	}
-
-	expect(locator).not.toBeNull();
-	if (!locator) {
-		const description = typeof target === "string" ? target : "supplied locator";
-		throw new Error(`No element found for ${description}`);
-	}
-
-	const textPromise = locator.textContent();
-	if (expectation.equals !== undefined) {
-		await expect(textPromise).resolves.toBe(expectation.equals);
-	} else if (expectation.contains !== undefined) {
-		await expect(textPromise).resolves.toContain(expectation.contains);
-	} else {
-		await expect(textPromise).resolves.toMatch(expectation.matches);
-	}
-	return true;
 };
 
 exports.fixupIndex = async () => {

@@ -11,14 +11,18 @@ describe("Display of modules", () => {
 
 	it("should show the test header", async () => {
 		// textContent returns lowercase here, the uppercase is realized by CSS, which therefore does not end up in textContent
-		await expect(
-			helpers.expectTextContent("#module_0_helloworld .module-header", { equals: "test_header" })
-		).resolves.toBe(true);
+		const elem = await helpers.waitForElement("#module_0_helloworld .module-header");
+		expect(elem).not.toBeNull();
+		const text = await elem.textContent();
+		expect(text).not.toBeNull();
+		expect(text).toBe("test_header");
 	});
 
 	it("should show no header if no header text is specified", async () => {
-		await expect(
-			helpers.expectTextContent("#module_1_helloworld .module-header", { equals: "undefined" })
-		).resolves.toBe(true);
+		const elem = await helpers.waitForElement("#module_1_helloworld .module-header");
+		expect(elem).not.toBeNull();
+		const text = await elem.textContent();
+		expect(text).not.toBeNull();
+		expect(text).toBe("undefined");
 	});
 });

@@ -31,9 +31,11 @@ describe("Alert module", () => {
 		});
 
 		it("should show the translated welcome message", async () => {
-			await expect(
-				helpers.expectTextContent(".ns-box .ns-box-inner .light.bright.small", { contains: "Welcome, start was successful!" })
-			).resolves.toBe(true);
+			const elem = await helpers.waitForElement(".ns-box .ns-box-inner .light.bright.small");
+			expect(elem).not.toBeNull();
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toContain("Welcome, start was successful!");
 		});
 	});
 
@@ -44,9 +46,11 @@ describe("Alert module", () => {
 		});
 
 		it("should show the custom welcome message", async () => {
-			await expect(
-				helpers.expectTextContent(".ns-box .ns-box-inner .light.bright.small", { contains: "Custom welcome message!" })
-			).resolves.toBe(true);
+			const elem = await helpers.waitForElement(".ns-box .ns-box-inner .light.bright.small");
+			expect(elem).not.toBeNull();
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toContain("Custom welcome message!");
 		});
 	});
 });

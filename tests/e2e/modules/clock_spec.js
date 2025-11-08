@@ -14,12 +14,20 @@ describe("Clock module", () => {
 
 		it("should show the date in the correct format", async () => {
 			const dateRegex = /^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), (?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}$/;
-			await expect(helpers.testMatch(".clock .date", dateRegex)).resolves.toBe(true);
+			const elem = await helpers.waitForElement(".clock .date");
+			expect(elem).not.toBeNull();
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toMatch(dateRegex);
 		});
 
 		it("should show the time in 24hr format", async () => {
 			const timeRegex = /^(?:2[0-3]|[01]\d):[0-5]\d[0-5]\d$/;
-			await expect(helpers.testMatch(".clock .time", timeRegex)).resolves.toBe(true);
+			const elem = await helpers.waitForElement(".clock .time");
+			expect(elem).not.toBeNull();
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toMatch(timeRegex);
 		});
 	});
 
@@ -31,12 +39,20 @@ describe("Clock module", () => {
 
 		it("should show the date in the correct format", async () => {
 			const dateRegex = /^(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), (?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}$/;
-			await expect(helpers.testMatch(".clock .date", dateRegex)).resolves.toBe(true);
+			const elem = await helpers.waitForElement(".clock .date");
+			expect(elem).not.toBeNull();
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toMatch(dateRegex);
 		});
 
 		it("should show the time in 12hr format", async () => {
 			const timeRegex = /^(?:1[0-2]|[1-9]):[0-5]\d[0-5]\d[ap]m$/;
-			await expect(helpers.testMatch(".clock .time", timeRegex)).resolves.toBe(true);
+			const elem = await helpers.waitForElement(".clock .time");
+			expect(elem).not.toBeNull();
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toMatch(timeRegex);
 		});
 
 		it("check for discreet elements of clock", async () => {
@@ -55,7 +71,11 @@ describe("Clock module", () => {
 
 		it("should show 12hr time with upper case AM/PM", async () => {
 			const timeRegex = /^(?:1[0-2]|[1-9]):[0-5]\d[0-5]\d[AP]M$/;
-			await expect(helpers.testMatch(".clock .time", timeRegex)).resolves.toBe(true);
+			const elem = await helpers.waitForElement(".clock .time");
+			expect(elem).not.toBeNull();
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toMatch(timeRegex);
 		});
 	});
 
@@ -67,7 +87,11 @@ describe("Clock module", () => {
 
 		it("should show 12hr time without seconds am/pm", async () => {
 			const timeRegex = /^(?:1[0-2]|[1-9]):[0-5]\d[ap]m$/;
-			await expect(helpers.testMatch(".clock .time", timeRegex)).resolves.toBe(true);
+			const elem = await helpers.waitForElement(".clock .time");
+			expect(elem).not.toBeNull();
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toMatch(timeRegex);
 		});
 	});
 
@@ -126,7 +150,11 @@ describe("Clock module", () => {
 
 		it("should show the week in the correct format", async () => {
 			const weekRegex = /^Week [0-9]{1,2}$/;
-			await expect(helpers.testMatch(".clock .week", weekRegex)).resolves.toBe(true);
+			const elem = await helpers.waitForElement(".clock .week");
+			expect(elem).not.toBeNull();
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toMatch(weekRegex);
 		});
 
 		it("should show the week with the correct number of week of year", async () => {
@@ -134,7 +162,9 @@ describe("Clock module", () => {
 			const weekToShow = `Week ${currentWeekNumber}`;
 			const elem = await helpers.waitForElement(".clock .week");
 			expect(elem).not.toBeNull();
-			await expect(helpers.expectTextContent(elem, { equals: weekToShow })).resolves.toBe(true);
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toBe(weekToShow);
 		});
 	});
 
@@ -146,7 +176,11 @@ describe("Clock module", () => {
 
 		it("should show the week in the correct format", async () => {
 			const weekRegex = /^W[0-9]{1,2}$/;
-			await expect(helpers.testMatch(".clock .week", weekRegex)).resolves.toBe(true);
+			const elem = await helpers.waitForElement(".clock .week");
+			expect(elem).not.toBeNull();
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toMatch(weekRegex);
 		});
 
 		it("should show the week with the correct number of week of year", async () => {
@@ -154,7 +188,9 @@ describe("Clock module", () => {
 			const weekToShow = `W${currentWeekNumber}`;
 			const elem = await helpers.waitForElement(".clock .week");
 			expect(elem).not.toBeNull();
-			await expect(helpers.expectTextContent(elem, { equals: weekToShow })).resolves.toBe(true);
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toBe(weekToShow);
 		});
 	});
 

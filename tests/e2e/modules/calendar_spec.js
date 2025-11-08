@@ -30,9 +30,12 @@ describe("Calendar module", () => {
 		return true;
 	};
 
-	const testTextContain = async (element, text) => {
-		const locator = await helpers.waitForElement(element, "undefinedLoading");
-		await helpers.expectTextContent(locator, { contains: text });
+	const testTextContain = async (selector, expectedText) => {
+		const locator = await helpers.waitForElement(selector, "undefinedLoading");
+		expect(locator).not.toBeNull();
+		const text = await locator.textContent();
+		expect(text).not.toBeNull();
+		expect(text).toContain(expectedText);
 		return true;
 	};
 

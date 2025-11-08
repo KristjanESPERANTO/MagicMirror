@@ -18,7 +18,9 @@ describe("Position of modules", () => {
 		it(`should show text in ${position}`, async () => {
 			const locator = getPage().locator(`.${className} .module-content`).first();
 			await locator.waitFor({ state: "visible" });
-			await expect(helpers.expectTextContent(locator, { contains: `Text in ${position}` })).resolves.toBe(true);
+			const text = await locator.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toContain(`Text in ${position}`);
 		});
 	}
 });

@@ -10,14 +10,18 @@ describe("Check configuration without modules", () => {
 	});
 
 	it("shows the message MagicMirror² title", async () => {
-		await expect(
-			helpers.expectTextContent("#module_1_helloworld .module-content", { contains: "MagicMirror²" })
-		).resolves.toBe(true);
+		const elem = await helpers.waitForElement("#module_1_helloworld .module-content");
+		expect(elem).not.toBeNull();
+		const text = await elem.textContent();
+		expect(text).not.toBeNull();
+		expect(text).toContain("MagicMirror²");
 	});
 
 	it("shows the project URL", async () => {
-		await expect(
-			helpers.expectTextContent("#module_5_helloworld .module-content", { contains: "https://magicmirror.builders/" })
-		).resolves.toBe(true);
+		const elem = await helpers.waitForElement("#module_5_helloworld .module-content");
+		expect(elem).not.toBeNull();
+		const text = await elem.textContent();
+		expect(text).not.toBeNull();
+		expect(text).toContain("https://magicmirror.builders/");
 	});
 });

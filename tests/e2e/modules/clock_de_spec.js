@@ -13,7 +13,11 @@ describe("Clock set to german language module", () => {
 
 		it("shows week with correct format", async () => {
 			const weekRegex = /^[0-9]{1,2}. Kalenderwoche$/;
-			await expect(helpers.testMatch(".clock .week", weekRegex)).resolves.toBe(true);
+			const elem = await helpers.waitForElement(".clock .week");
+			expect(elem).not.toBeNull();
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toMatch(weekRegex);
 		});
 	});
 
@@ -25,7 +29,11 @@ describe("Clock set to german language module", () => {
 
 		it("shows week with correct format", async () => {
 			const weekRegex = /^[0-9]{1,2}KW$/;
-			await expect(helpers.testMatch(".clock .week", weekRegex)).resolves.toBe(true);
+			const elem = await helpers.waitForElement(".clock .week");
+			expect(elem).not.toBeNull();
+			const text = await elem.textContent();
+			expect(text).not.toBeNull();
+			expect(text).toMatch(weekRegex);
 		});
 	});
 });
