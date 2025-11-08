@@ -4,7 +4,6 @@ const weatherFunc = require("../helpers/weather-functions");
 
 describe("Weather module: Weather Hourly Forecast", () => {
 	let page;
-	const getText = (selector, expectedText) => weatherFunc.getText(page, selector, expectedText);
 
 	afterAll(async () => {
 		await weatherFunc.stopApplication();
@@ -19,7 +18,8 @@ describe("Weather module: Weather Hourly Forecast", () => {
 		const minTemps = ["7:00 pm", "8:00 pm", "9:00 pm", "10:00 pm", "11:00 pm"];
 		for (const [index, hour] of minTemps.entries()) {
 			it(`should render forecast for hour ${hour}`, async () => {
-				await expect(getText(`.weather table.small tr:nth-child(${index + 1}) td.day`, hour)).resolves.toBe(true);
+				const dayCell = page.locator(`.weather table.small tr:nth-child(${index + 1}) td.day`);
+				await expect(dayCell).toHaveText(hour);
 			});
 		}
 	});
@@ -34,7 +34,8 @@ describe("Weather module: Weather Hourly Forecast", () => {
 			const minTemps = ["7:00 pm", "9:00 pm", "11:00 pm", "1:00 am", "3:00 am"];
 			for (const [index, hour] of minTemps.entries()) {
 				it(`should render forecast for hour ${hour}`, async () => {
-					await expect(getText(`.weather table.small tr:nth-child(${index + 1}) td.day`, hour)).resolves.toBe(true);
+					const dayCell = page.locator(`.weather table.small tr:nth-child(${index + 1}) td.day`);
+					await expect(dayCell).toHaveText(hour);
 				});
 			}
 		});
@@ -51,7 +52,8 @@ describe("Weather module: Weather Hourly Forecast", () => {
 			for (const [index, amount] of amounts.entries()) {
 				if (amount) {
 					it(`should render precipitation amount ${amount}`, async () => {
-						await expect(getText(`.weather table.small tr:nth-child(${index + 1}) td.precipitation-amount`, amount)).resolves.toBe(true);
+						const amountCell = page.locator(`.weather table.small tr:nth-child(${index + 1}) td.precipitation-amount`);
+						await expect(amountCell).toHaveText(amount);
 					});
 				}
 			}
@@ -62,7 +64,8 @@ describe("Weather module: Weather Hourly Forecast", () => {
 			for (const [index, pop] of probabilities.entries()) {
 				if (pop) {
 					it(`should render probability ${pop}`, async () => {
-						await expect(getText(`.weather table.small tr:nth-child(${index + 1}) td.precipitation-prob`, pop)).resolves.toBe(true);
+						const probabilityCell = page.locator(`.weather table.small tr:nth-child(${index + 1}) td.precipitation-prob`);
+						await expect(probabilityCell).toHaveText(pop);
 					});
 				}
 			}
