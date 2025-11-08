@@ -20,8 +20,6 @@ describe("App environment", () => {
 	});
 
 	it("should show the title MagicMirror²", async () => {
-		const elem = await helpers.waitForElement("title");
-		expect(elem).not.toBeNull();
-		expect(elem.textContent).toBe("MagicMirror²");
+		await expect(helpers.expectTextContent("title", { equals: "MagicMirror²" })).resolves.toBe(true);
 	});
 });

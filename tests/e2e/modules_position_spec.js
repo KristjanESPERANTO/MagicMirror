@@ -1,5 +1,7 @@
 const helpers = require("./helpers/global-setup");
 
+const getPage = () => helpers.getPage();
+
 describe("Position of modules", () => {
 	beforeAll(async () => {
 		await helpers.startApplication("tests/configs/modules/positions.js");
@@ -14,9 +16,9 @@ describe("Position of modules", () => {
 	for (const position of positions) {
 		const className = position.replace("_", ".");
 		it(`should show text in ${position}`, async () => {
-			const elem = await helpers.waitForElement(`.${className}`);
-			expect(elem).not.toBeNull();
-			expect(elem.textContent).toContain(`Text in ${position}`);
+			const locator = getPage().locator(`.${className} .module-content`).first();
+			await locator.waitFor({ state: "visible" });
+			await expect(helpers.expectTextContent(locator, { contains: `Text in ${position}` })).resolves.toBe(true);
 		});
 	}
 });

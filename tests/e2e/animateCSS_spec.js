@@ -29,10 +29,10 @@ describe("AnimateCSS integration Test", () => {
 	async function waitForAnimationClass (cls, { timeout = 6000 } = {}) {
 		const start = Date.now();
 		while (Date.now() - start < timeout) {
-			if (document.querySelector(`.compliments.animate__animated.${cls}`)) {
+			if (await helpers.querySelector(`.compliments.animate__animated.${cls}`)) {
 				// small stability wait
 				await new Promise((r) => setTimeout(r, 50));
-				if (document.querySelector(`.compliments.animate__animated.${cls}`)) return true;
+				if (await helpers.querySelector(`.compliments.animate__animated.${cls}`)) return true;
 			}
 			await new Promise((r) => setTimeout(r, 100));
 		}
@@ -47,7 +47,7 @@ describe("AnimateCSS integration Test", () => {
 	async function assertNoAnimationWithin (ms = 2000) {
 		const start = Date.now();
 		while (Date.now() - start < ms) {
-			if (document.querySelector(".compliments.animate__animated")) {
+			if (await helpers.querySelector(".compliments.animate__animated")) {
 				throw new Error("Unexpected animate__animated class present in non-animation scenario");
 			}
 			await new Promise((r) => setTimeout(r, 100));

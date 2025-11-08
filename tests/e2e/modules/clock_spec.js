@@ -78,7 +78,7 @@ describe("Clock module", () => {
 		});
 
 		it("should not show the time when digital clock is shown", async () => {
-			const elem = document.querySelector(".clock .digital .time");
+			const elem = await helpers.querySelector(".clock .digital .time");
 			expect(elem).toBeNull();
 		});
 	});
@@ -113,7 +113,7 @@ describe("Clock module", () => {
 			const elem = await helpers.waitForElement(".clock .digital .sun");
 			expect(elem).not.toBeNull();
 
-			const elem2 = document.querySelector(".clock .digital .sun .fas.fa-sun");
+			const elem2 = await helpers.querySelector(".clock .digital .sun .fas.fa-sun");
 			expect(elem2).toBeNull();
 		});
 	});
@@ -134,7 +134,7 @@ describe("Clock module", () => {
 			const weekToShow = `Week ${currentWeekNumber}`;
 			const elem = await helpers.waitForElement(".clock .week");
 			expect(elem).not.toBeNull();
-			expect(elem.textContent).toBe(weekToShow);
+			await expect(helpers.expectTextContent(elem, { equals: weekToShow })).resolves.toBe(true);
 		});
 	});
 
@@ -154,7 +154,7 @@ describe("Clock module", () => {
 			const weekToShow = `W${currentWeekNumber}`;
 			const elem = await helpers.waitForElement(".clock .week");
 			expect(elem).not.toBeNull();
-			expect(elem.textContent).toBe(weekToShow);
+			await expect(helpers.expectTextContent(elem, { equals: weekToShow })).resolves.toBe(true);
 		});
 	});
 

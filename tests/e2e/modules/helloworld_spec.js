@@ -12,9 +12,7 @@ describe("Test helloworld module", () => {
 		});
 
 		it("Test message helloworld module", async () => {
-			const elem = await helpers.waitForElement(".helloworld");
-			expect(elem).not.toBeNull();
-			expect(elem.textContent).toContain("Test HelloWorld Module");
+			await expect(helpers.expectTextContent(".helloworld", { contains: "Test HelloWorld Module" })).resolves.toBe(true);
 		});
 	});
 
@@ -25,9 +23,7 @@ describe("Test helloworld module", () => {
 		});
 
 		it("Test message helloworld module", async () => {
-			const elem = await helpers.waitForElement(".helloworld");
-			expect(elem).not.toBeNull();
-			expect(elem.textContent).toContain("Hello World!");
+			await expect(helpers.expectTextContent(".helloworld", { contains: "Hello World!" })).resolves.toBe(true);
 		});
 	});
 });

@@ -16,7 +16,7 @@ describe("Alert module", () => {
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 
 			// Check that no alert/notification elements are present
-			const alertElements = document.querySelectorAll(".ns-box .ns-box-inner .light.bright.small");
+			const alertElements = await helpers.querySelectorAll(".ns-box .ns-box-inner .light.bright.small");
 			expect(alertElements).toHaveLength(0);
 		});
 	});
@@ -31,9 +31,9 @@ describe("Alert module", () => {
 		});
 
 		it("should show the translated welcome message", async () => {
-			const elem = await helpers.waitForElement(".ns-box .ns-box-inner .light.bright.small");
-			expect(elem).not.toBeNull();
-			expect(elem.textContent).toContain("Welcome, start was successful!");
+			await expect(
+				helpers.expectTextContent(".ns-box .ns-box-inner .light.bright.small", { contains: "Welcome, start was successful!" })
+			).resolves.toBe(true);
 		});
 	});
 
@@ -44,9 +44,9 @@ describe("Alert module", () => {
 		});
 
 		it("should show the custom welcome message", async () => {
-			const elem = await helpers.waitForElement(".ns-box .ns-box-inner .light.bright.small");
-			expect(elem).not.toBeNull();
-			expect(elem.textContent).toContain("Custom welcome message!");
+			await expect(
+				helpers.expectTextContent(".ns-box .ns-box-inner .light.bright.small", { contains: "Custom welcome message!" })
+			).resolves.toBe(true);
 		});
 	});
 });

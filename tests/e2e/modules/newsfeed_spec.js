@@ -9,20 +9,16 @@ const runTests = async () => {
 		});
 
 		it("should show the newsfeed title", async () => {
-			const elem = await helpers.waitForElement(".newsfeed .newsfeed-source");
-			expect(elem).not.toBeNull();
-			expect(elem.textContent).toContain("Rodrigo Ramirez Blog");
+			await expect(helpers.expectTextContent(".newsfeed .newsfeed-source", { contains: "Rodrigo Ramirez Blog" })).resolves.toBe(true);
 		});
 
 		it("should show the newsfeed article", async () => {
-			const elem = await helpers.waitForElement(".newsfeed .newsfeed-title");
-			expect(elem).not.toBeNull();
-			expect(elem.textContent).toContain("QPanel");
+			await expect(helpers.expectTextContent(".newsfeed .newsfeed-title", { contains: "QPanel" })).resolves.toBe(true);
 		});
 
 		it("should NOT show the newsfeed description", async () => {
 			await helpers.waitForElement(".newsfeed");
-			const elem = document.querySelector(".newsfeed .newsfeed-desc");
+			const elem = await helpers.querySelector(".newsfeed .newsfeed-desc");
 			expect(elem).toBeNull();
 		});
 	});
@@ -34,15 +30,11 @@ const runTests = async () => {
 		});
 
 		it("should not show articles with prohibited words", async () => {
-			const elem = await helpers.waitForElement(".newsfeed .newsfeed-title");
-			expect(elem).not.toBeNull();
-			expect(elem.textContent).toContain("Problema VirtualBox");
+			await expect(helpers.expectTextContent(".newsfeed .newsfeed-title", { contains: "Problema VirtualBox" })).resolves.toBe(true);
 		});
 
 		it("should show the newsfeed description", async () => {
-			const elem = await helpers.waitForElement(".newsfeed .newsfeed-desc");
-			expect(elem).not.toBeNull();
-			expect(elem.textContent).not.toHaveLength(0);
+			await expect(helpers.expectTextContent(".newsfeed .newsfeed-desc", { matches: /\S/ })).resolves.toBe(true);
 		});
 	});
 
@@ -55,7 +47,7 @@ const runTests = async () => {
 		it("should show malformed url warning", async () => {
 			const elem = await helpers.waitForElement(".newsfeed .small", "No news at the moment.");
 			expect(elem).not.toBeNull();
-			expect(elem.textContent).toContain("Error in the Newsfeed module. Malformed url.");
+			await expect(helpers.expectTextContent(elem, { contains: "Error in the Newsfeed module. Malformed url." })).resolves.toBe(true);
 		});
 	});
 
@@ -68,7 +60,7 @@ const runTests = async () => {
 		it("should show empty items info message", async () => {
 			const elem = await helpers.waitForElement(".newsfeed .small");
 			expect(elem).not.toBeNull();
-			expect(elem.textContent).toContain("No news at the moment.");
+			await expect(helpers.expectTextContent(elem, { contains: "No news at the moment." })).resolves.toBe(true);
 		});
 	});
 };

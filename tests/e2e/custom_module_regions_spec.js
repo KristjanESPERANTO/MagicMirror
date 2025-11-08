@@ -16,15 +16,15 @@ describe("Custom Position of modules", () => {
 	const className1 = positions[i].replace("_", ".");
 	let message1 = positions[i];
 	it(`should show text in ${message1}`, async () => {
-		const elem = await helpers.waitForElement(`.${className1}`);
-		expect(elem).not.toBeNull();
-		expect(elem.textContent).toContain(`Text in ${message1}`);
+		await expect(
+			helpers.expectTextContent(`.${className1} .module-content`, { contains: `Text in ${message1}` })
+		).resolves.toBe(true);
 	});
 	i = 1;
 	const className2 = positions[i].replace("_", ".");
 	let message2 = positions[i];
 	it(`should NOT show text in ${message2}`, async () => {
-		const elem = await helpers.waitForElement(`.${className2}`, "", 1500);
+		const elem = await helpers.querySelector(`.${className2} .module-content`);
 		expect(elem).toBeNull();
-	}, 1510);
+	});
 });

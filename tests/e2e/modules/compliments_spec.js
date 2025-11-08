@@ -12,7 +12,9 @@ describe("Compliments module", () => {
 		expect(elem).not.toBeNull();
 		elem = await helpers.waitForElement(".module-content");
 		expect(elem).not.toBeNull();
-		expect(complimentsArray).toContain(elem.textContent);
+		const content = await elem.textContent();
+		expect(content).not.toBeNull();
+		expect(complimentsArray).toContain(content);
 		return true;
 	};
 

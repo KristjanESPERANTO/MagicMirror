@@ -1,29 +1,38 @@
 const helpers = require("../helpers/global-setup");
 const serverBasicAuth = require("../helpers/basic-auth");
 
+const getPage = () => helpers.getPage();
+
 describe("Calendar module", () => {
 
 	/**
-	 * @param {string} element css selector
-	 * @param {string} result expected number
-	 * @param {string} not reverse result
-	 * @returns {boolean} result
+	 * Assert the number of matching elements.
+	 * @param {string} selector css selector
+	 * @param {number} expectedLength expected number of elements
+	 * @param {string} [not] optional negation marker (use "not" to negate)
+	 * @returns {Promise<boolean>} assertion outcome
 	 */
-	const testElementLength = async (element, result, not) => {
-		const elem = await helpers.waitForAllElements(element);
-		expect(elem).not.toBeNull();
+	const testElementLength = async (selector, expectedLength, not) => {
+		const locator = getPage().locator(selector);
+		if (expectedLength === 0 && not !== "not") {
+			const count = await locator.count();
+			expect(count).toBe(0);
+			return true;
+		}
+
+		await locator.first().waitFor({ state: "attached" });
+		const count = await locator.count();
 		if (not === "not") {
-			expect(elem).not.toHaveLength(result);
+			expect(count).not.toBe(expectedLength);
 		} else {
-			expect(elem).toHaveLength(result);
+			expect(count).toBe(expectedLength);
 		}
 		return true;
 	};
 
 	const testTextContain = async (element, text) => {
-		const elem = await helpers.waitForElement(element, "undefinedLoading");
-		expect(elem).not.toBeNull();
-		expect(elem.textContent).toContain(text);
+		const locator = await helpers.waitForElement(element, "undefinedLoading");
+		await helpers.expectTextContent(locator, { contains: text });
 		return true;
 	};
 

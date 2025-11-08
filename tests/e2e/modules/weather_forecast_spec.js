@@ -45,7 +45,8 @@ describe("Weather module: Weather Forecast", () => {
 			it(`should render fading of rows with opacity=${opacity}`, async () => {
 				const elem = await helpers.waitForElement(`.weather table.small tr:nth-child(${index + 1})`);
 				expect(elem).not.toBeNull();
-				expect(elem.outerHTML).toContain(`<tr style="opacity: ${opacity};">`);
+				const html = await elem.evaluate((node) => node.outerHTML);
+				expect(html).toContain(`style="opacity: ${opacity};"`);
 			});
 		}
 	});
@@ -76,8 +77,9 @@ describe("Weather module: Weather Forecast", () => {
 		it("should render colored rows", async () => {
 			const table = await helpers.waitForElement(".weather table.myTableClass");
 			expect(table).not.toBeNull();
-			expect(table.rows).not.toBeNull();
-			expect(table.rows).toHaveLength(5);
+			const rows = table.locator("tr");
+			await rows.first().waitFor({ state: "visible" });
+			await expect(rows.count()).resolves.toBe(5);
 		});
 
 		const precipitations = [undefined, "2.51 mm"];
