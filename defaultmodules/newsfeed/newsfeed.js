@@ -36,14 +36,6 @@ Module.register("newsfeed", {
 		dangerouslyDisableAutoEscaping: false
 	},
 
-	getUrlPrefix (item) {
-		if (item.useCorsProxy) {
-			return `${location.protocol}//${location.host}${config.basePath}cors?url=`;
-		} else {
-			return "";
-		}
-	},
-
 	// Define required scripts.
 	getScripts () {
 		return ["moment.js"];
@@ -104,19 +96,9 @@ Module.register("newsfeed", {
 		} else if (notification === "ARTICLE_URL_STATUS") {
 			if (this.config.showFullArticle) {
 				this.articleFrameCheckPending = false;
-				this.articleUnavailable = !payload.canFrame;
-				if (!this.articleUnavailable) {
-					// Article can be framed — now shift the bottom bar to allow scrolling
-					document.getElementsByClassName("region bottom bar")[0].classList.add("newsfeed-fullarticle");
-				}
+				this.articleUseCorsProxy = !payload.canFrame;
+				document.getElementsByClassName("region bottom bar")[0].classList.add("newsfeed-fullarticle");
 				this.updateDom(100);
-				if (this.articleUnavailable) {
-					// Briefly show the unavailable message, then return to normal newsfeed view
-					setTimeout(() => {
-						this.resetDescrOrFullArticleAndTimer();
-						this.updateDom(500);
-					}, 3000);
-				}
 			}
 		}
 	},
@@ -129,18 +111,18 @@ Module.register("newsfeed", {
 			if (this.articleFrameCheckPending) {
 				// Still waiting for the server-side framing check
 				wrapper.innerHTML = `<div class="small dimmed">${this.translate("LOADING")}</div>`;
-			} else if (this.articleUnavailable) {
-				wrapper.innerHTML = `<div class="small dimmed">${this.translate("NEWSFEED_ARTICLE_UNAVAILABLE")}</div>`;
 			} else {
 				const container = document.createElement("div");
 				container.className = "newsfeed-fullarticle-container";
 				container.scrollTop = this.scrollPosition;
 				const iframe = document.createElement("iframe");
 				iframe.className = "newsfeed-fullarticle";
-				// Always use the direct article URL — the CORS proxy is for server-side
-				// RSS feed fetching, not for browser iframes.
 				const item = this.newsItems[this.activeItem];
-				iframe.src = item ? (typeof item.url === "string" ? item.url : item.url.href) : "";
+				let articleUrl = item ? (typeof item.url === "string" ? item.url : item.url.href) : "";
+				if (this.articleUseCorsProxy && articleUrl) {
+					articleUrl = `${location.protocol}//${location.host}/cors?url=${articleUrl}`;
+				}
+				iframe.src = articleUrl;
 				this.articleIframe = iframe;
 				this.articleContainer = container;
 				container.appendChild(iframe);
@@ -201,7 +183,7 @@ Module.register("newsfeed", {
 	getActiveItemURL () {
 		const item = this.newsItems[this.activeItem];
 		if (item) {
-			return typeof item.url === "string" ? this.getUrlPrefix(item) + item.url : this.getUrlPrefix(item) + item.url.href;
+			return typeof item.url === "string" ? item.url : item.url.href;
 		} else {
 			return "";
 		}
@@ -403,7 +385,7 @@ Module.register("newsfeed", {
 		this.articleIframe = null;
 		this.articleContainer = null;
 		this.articleFrameCheckPending = false;
-		this.articleUnavailable = false;
+		this.articleUseCorsProxy = false;
 		// reset bottom bar alignment
 		document.getElementsByClassName("region bottom bar")[0].classList.remove("newsfeed-fullarticle");
 		if (!this.timer) {
@@ -490,7 +472,7 @@ Module.register("newsfeed", {
 		// Check server-side whether the article URL allows framing.
 		// The bottom bar CSS class is only added once we know the iframe will be shown.
 		this.articleFrameCheckPending = true;
-		this.articleUnavailable = false;
+		this.articleUseCorsProxy = false;
 		const rawUrl = typeof item.url === "string" ? item.url : item.url.href;
 		this.sendSocketNotification("CHECK_ARTICLE_URL", { url: rawUrl });
 		clearInterval(this.timer);
