@@ -178,22 +178,14 @@ const loadConfig = () => {
 };
 
 /**
- * Checks the config file using eslint.
- * @param {object} configObject the configuration object
+ * Runs the ESLint-based syntax checks for the config file content.
+ * @param {string} configFileName - The filename shown in lint messages.
+ * @param {string} configFileContent - The config file content to validate.
+ * @returns {Array<object>} ESLint messages for syntax-related problems.
  */
-const checkConfigFile = (configObject) => {
-	let configObj = configObject;
-	if (!configObj) configObj = loadConfig();
-	const configFileName = configObj.configFilename;
-
-	// Validate syntax of the configuration file.
-	Log.info(`Checking config file ${configFileName} ...`);
-
-	// I'm not sure if all ever is utf-8
-	const configFile = configObj.configContentFull;
-
-	const errors = linter.verify(
-		configFile,
+function getConfigFileSyntaxErrors (configFileName, configFileContent) {
+	return linter.verify(
+		configFileContent,
 		{
 			languageOptions: {
 				ecmaVersion: "latest",
@@ -209,20 +201,22 @@ const checkConfigFile = (configObject) => {
 		},
 		configFileName
 	);
+}
 
-	if (errors.length === 0) {
-		Log.info(styleText("green", "Your configuration file doesn't contain syntax errors :)"));
-		validateModulePositions(configObj.fullConf);
-	} else {
-		let errorMessage = "Your configuration file contains syntax errors :(";
+/**
+ * Formats ESLint messages for the config syntax error output.
+ * @param {Array<object>} errors - ESLint messages returned by `linter.verify`.
+ * @returns {string} A user-facing error message.
+ */
+function formatConfigSyntaxErrors (errors) {
+	let errorMessage = "Your configuration file contains syntax errors :(";
 
-		for (const error of errors) {
-			errorMessage += `\nLine ${error.line} column ${error.column}: ${error.message}`;
-		}
-		Log.error(errorMessage);
-		process.exit(1);
+	for (const error of errors) {
+		errorMessage += `\nLine ${error.line} column ${error.column}: ${error.message}`;
 	}
-};
+
+	return errorMessage;
+}
 
 /**
  * Validates the modules array in the config object.
@@ -231,38 +225,36 @@ const checkConfigFile = (configObject) => {
  *  - every entry has a `module` property of type string
  *  - every entry's `position` (if set) is a known region from index.html
  *
- * Unknown positions produce a warning; structural errors are fatal.
+ * Unknown positions produce a warning; structural errors throw an error so the
+ * outer validation flow can decide how to report and terminate.
  * @param {object} data - The full config object to validate.
+ * @throws {Error} When the modules structure is invalid.
  */
-const validateModulePositions = (data) => {
+function validateModulePositions (data) {
 	Log.info("Checking modules structure configuration ...");
 
 	const positionList = getModulePositions();
 
 	// `modules` always exists (defaults.js provides a default array), but guard against it being overridden with a non-array value
 	if (data.modules !== undefined && !Array.isArray(data.modules)) {
-		Log.error("This module configuration contains errors:\nmodules must be an array");
-		process.exit(1);
+		throw new Error("This module configuration contains errors:\nmodules must be an array");
 	}
 
 	// Validate each module entry
 	for (const [index, mod] of (data.modules ?? []).entries()) {
 		// Each module entry must be an object so we can safely inspect its fields
 		if (mod === null || typeof mod !== "object" || Array.isArray(mod)) {
-			Log.error(`This module configuration contains errors:\n${JSON.stringify(mod, null, 2)}\nmodule entry must be an object`);
-			process.exit(1);
+			throw new Error(`This module configuration contains errors:\n${JSON.stringify(mod, null, 2)}\nmodule entry must be an object`);
 		}
 
 		// `module` (the module name) is required and must be a string
 		if (typeof mod.module !== "string") {
-			Log.error(`This module configuration contains errors:\n${JSON.stringify(mod, null, 2)}\nmodule: must be a string`);
-			process.exit(1);
+			throw new Error(`This module configuration contains errors:\n${JSON.stringify(mod, null, 2)}\nmodule: must be a string`);
 		}
 
 		// `position` is optional, but must be a string when provided
 		if (mod.position !== undefined && typeof mod.position !== "string") {
-			Log.error(`This module configuration contains errors:\n${JSON.stringify(mod, null, 2)}\nposition: must be a string`);
-			process.exit(1);
+			throw new Error(`This module configuration contains errors:\n${JSON.stringify(mod, null, 2)}\nposition: must be a string`);
 		}
 
 		// `position` is optional, but when set it must match a known region
@@ -273,6 +265,38 @@ const validateModulePositions = (data) => {
 	}
 
 	Log.info(styleText("green", "Your modules structure configuration doesn't contain errors :)"));
-};
+}
+
+/**
+ * Checks the config file by orchestrating syntax and structure validation.
+ *
+ * Syntax errors and invalid module structures are fatal. Unknown module
+ * positions remain warnings only.
+ * @param {object} [configObject] - The loaded config object. When omitted, the config is loaded first.
+ */
+function checkConfigFile (configObject) {
+	let configObj = configObject;
+	if (!configObj) configObj = loadConfig();
+	const configFileName = configObj.configFilename;
+
+	// Validate syntax of the configuration file first.
+	Log.info(`Checking config file ${configFileName} ...`);
+
+	const errors = getConfigFileSyntaxErrors(configFileName, configObj.configContentFull);
+
+	if (errors.length === 0) {
+		Log.info(styleText("green", "Your configuration file doesn't contain syntax errors :)"));
+
+		try {
+			validateModulePositions(configObj.fullConf);
+		} catch (error) {
+			Log.error(error.message);
+			process.exit(1);
+		}
+	} else {
+		Log.error(formatConfigSyntaxErrors(errors));
+		process.exit(1);
+	}
+}
 
 module.exports = { loadConfig, getModulePositions, moduleHasValidPosition, getAvailableModulePositions, checkConfigFile };
