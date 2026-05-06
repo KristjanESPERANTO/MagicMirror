@@ -1,7 +1,7 @@
 const path = require("node:path");
 const { JSDOM } = require("jsdom");
 
-describe("File js/class", () => {
+describe("File js/module (cloneObject)", () => {
 	describe("Test function cloneObject", () => {
 		let clone;
 		let dom;
@@ -9,8 +9,8 @@ describe("File js/class", () => {
 		beforeAll(() => {
 			return new Promise((done) => {
 				dom = new JSDOM(
-					`<script>var Log = {log: () => {}};</script>\
-					<script src="file://${path.join(__dirname, "..", "..", "..", "js", "class.js")}">`,
+					`<script>var Log = {log: () => {}, info: () => {}, warn: () => {}, error: () => {}, debug: () => {}};</script>\
+					<script src="file://${path.join(__dirname, "..", "..", "..", "js", "module.js")}">`,
 					{ runScripts: "dangerously", resources: "usable" }
 				);
 				dom.window.onload = () => {
