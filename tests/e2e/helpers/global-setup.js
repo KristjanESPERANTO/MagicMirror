@@ -88,7 +88,7 @@ exports.getPage = () => {
 	return page;
 };
 
-exports.startApplication = async (configFilename, exec) => {
+exports.startApplication = async (configFilename) => {
 	vi.resetModules();
 
 	// Clear Node's require cache for config and app files to prevent stale configs and middlewares
@@ -107,8 +107,8 @@ exports.startApplication = async (configFilename, exec) => {
 		await exports.stopApplication();
 	}
 
-	// Use fixed port 8080 (tests run sequentially, no conflicts)
-	const port = 8080;
+	// Use MM_PORT if preset by a test, otherwise default to 8080.
+	const port = Number(process.env.MM_PORT) || 8080;
 	global.testPort = port;
 
 	// Set config sample for use in test
@@ -126,9 +126,6 @@ exports.startApplication = async (configFilename, exec) => {
 
 	process.env.mmTestMode = "true";
 	process.setMaxListeners(0);
-	if (typeof exec === "function") {
-		exec();
-	}
 	global.app = require(`${global.root_path}/js/app`);
 
 	return global.app.start();

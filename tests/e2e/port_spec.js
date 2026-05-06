@@ -19,16 +19,18 @@ describe("port directive configuration", () => {
 
 	describe("Set port 8100 on environment variable MM_PORT", () => {
 		beforeAll(async () => {
-			await helpers.startApplication("tests/configs/port_8090.js", (process.env.MM_PORT = 8100));
+			process.env.MM_PORT = "8100";
+			await helpers.startApplication("tests/configs/port_8090.js");
 		});
 
 		afterAll(async () => {
 			await helpers.stopApplication();
+			delete process.env.MM_PORT;
 		});
 
 		it("should return 200", async () => {
-			const port = global.testPort || 8080;
-			const res = await fetch(`http://localhost:${port}`);
+			expect(global.testPort).toBe(8100);
+			const res = await fetch(`http://localhost:${global.testPort}`);
 			expect(res.status).toBe(200);
 		});
 	});
