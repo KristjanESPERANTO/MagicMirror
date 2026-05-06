@@ -14,24 +14,42 @@ const { getConfigFilePath } = require("#server_functions");
 
 const linter = new Linter({ configType: "flat" });
 
-const requireFromString = (src) => {
+/**
+ * Executes CommonJS source code from a string and returns its exports.
+ * @param {string} src - JavaScript source code.
+ * @returns {object} The exported module value.
+ */
+function requireFromString (src) {
 	const m = new module.constructor();
 	m._compile(src, "");
 	return m.exports;
-};
+}
 
 // return all available module positions
-const getAvailableModulePositions = () => {
+/**
+ * Returns all discovered module positions.
+ * @returns {Array<string>} Known module positions.
+ */
+function getAvailableModulePositions () {
 	return modulePositions;
-};
+}
 
 // return if position is on modulePositions Array (true/false)
-const moduleHasValidPosition = (position) => {
+/**
+ * Checks whether the provided module position exists.
+ * @param {string} position - Candidate module position.
+ * @returns {boolean} True when the position is known.
+ */
+function moduleHasValidPosition (position) {
 	if (getAvailableModulePositions().indexOf(position) === -1) return false;
 	return true;
-};
+}
 
-const getModulePositions = () => {
+/**
+ * Discovers module positions from index.html and caches them.
+ * @returns {Array<string>} Discovered module positions.
+ */
+function getModulePositions () {
 	// if not already discovered
 	if (modulePositions.length === 0) {
 		// get the lines of the index.html
@@ -59,14 +77,14 @@ const getModulePositions = () => {
 	}
 	// return the list to the caller
 	return modulePositions;
-};
+}
 
 /**
  * Checks the config for deprecated options and throws a warning in the logs
  * if it encounters one option from the deprecated.js list
  * @param {object} userConfig The user config
  */
-const checkDeprecatedOptions = (userConfig) => {
+function checkDeprecatedOptions (userConfig) {
 	const deprecated = require(`${global.root_path}/js/deprecated`);
 
 	// check for deprecated core options
@@ -86,13 +104,13 @@ const checkDeprecatedOptions = (userConfig) => {
 			}
 		}
 	}
-};
+}
 
 /**
  * Loads the config file. Combines it with the defaults and returns the config
  * @returns {object} an object holding full and redacted config
  */
-const loadConfig = () => {
+function loadConfig () {
 	Log.log("Loading config ...");
 	const defaults = require("./defaults");
 	if (global.mmTestMode) {
@@ -175,7 +193,7 @@ const loadConfig = () => {
 		process.exit(1);
 	}
 	return {};
-};
+}
 
 /**
  * Runs the ESLint-based syntax checks for the config file content.
