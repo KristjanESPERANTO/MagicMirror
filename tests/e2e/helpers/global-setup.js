@@ -126,7 +126,9 @@ exports.startApplication = async (configFilename, exec) => {
 
 	process.env.mmTestMode = "true";
 	process.setMaxListeners(0);
-	if (exec) exec;
+	if (typeof exec === "function") {
+		exec();
+	}
 	global.app = require(`${global.root_path}/js/app`);
 
 	return global.app.start();
