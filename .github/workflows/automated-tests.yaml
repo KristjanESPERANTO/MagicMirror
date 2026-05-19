@@ -61,8 +61,16 @@ jobs:
           npx playwright install --with-deps chromium
       - name: "Prepare environment for tests"
         run: |
-          # Download electron binary
-          npx install-electron
+          # On Node >= 26.1.0, extract-zip fails to fully extract the electron binary
+          # (see https://github.com/max-mapper/extract-zip/issues/154). Workaround:
+          # download and extract electron manually using the system unzip.
+          # TODO: simplify this once resolved upstream - e.g. via a fix in extract-zip
+          # (currently unmaintained) or by electron replacing extract-zip with an alternative.
+          ELECTRON_VERSION=$(node -e "console.log(require('./node_modules/electron/package.json').version)")
+          rm -rf node_modules/electron/dist
+          curl -sSL "https://github.com/electron/electron/releases/download/v${ELECTRON_VERSION}/electron-v${ELECTRON_VERSION}-linux-x64.zip" -o /tmp/electron.zip
+          unzip -q /tmp/electron.zip -d node_modules/electron/dist
+          echo -n "electron" > node_modules/electron/path.txt
           # Start labwc
           WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 WLR_RENDERER=pixman labwc &
           touch config/custom.css
