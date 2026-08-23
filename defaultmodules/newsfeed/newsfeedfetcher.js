@@ -155,6 +155,10 @@ class NewsfeedFetcher {
 			const pubdate = item.pubdate || item.published || item.updated || item["dc:date"] || item["a10:updated"];
 			const url = item.url || item.link || "";
 
+			if (typeof description !== "string") {
+				description = "";
+			}
+
 			if (title && pubdate) {
 				let displayTitle = title;
 				if (this.allowedBasicHtmlTags.length > 0) {
