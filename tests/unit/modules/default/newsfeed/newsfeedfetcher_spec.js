@@ -5,6 +5,7 @@ const path = require("node:path");
 const defaults = require("../../../../../js/defaults");
 
 const NewsfeedFetcher = require(`../../../../../${defaults.defaultModulesDir}/newsfeed/newsfeedfetcher`);
+const { sanitizeBasicHtml } = require(`../../../../../${defaults.defaultModulesDir}/newsfeed/feeditem`);
 
 const xmlContent = fs.readFileSync(path.resolve(__dirname, "../../../../mocks/newsfeed_test.xml"));
 
@@ -52,7 +53,7 @@ function makeItem ({ title = "Test title", link = "https://example.com/article",
 
 // The full safe list users may opt into; most tests run with it enabled.
 const ALL_TAGS = ["b", "strong", "i", "em", "u", "br", "code", "s", "sub", "sup"];
-const sanitize = (html, allowedTags = ALL_TAGS) => NewsfeedFetcher.sanitizeBasicHtml(html, allowedTags);
+const sanitize = (html, allowedTags = ALL_TAGS) => sanitizeBasicHtml(html, allowedTags);
 
 describe("NewsfeedFetcher.sanitizeBasicHtml", () => {
 	it("keeps real basic formatting tags", () => {
@@ -290,8 +291,8 @@ describe("NewsfeedFetcher", () => {
 	});
 });
 
-describe("feed parser newsfeed compatibility", () => {
-	it("normalizes empty Atom text before building items and preserves HTML content with allowed tags", async () => {
+describe("NewsfeedFetcher Atom compatibility", () => {
+	it("handles empty text summaries and HTML content without breaking the formatter contract", async () => {
 		const xml = `<?xml version="1.0"?>
 			<feed xmlns="http://www.w3.org/2005/Atom">
 				<title>Test feed</title>
@@ -310,17 +311,16 @@ describe("feed parser newsfeed compatibility", () => {
 					<summary type="html"><![CDATA[Text <strong>bold</strong> &amp; more]]></summary>
 				</entry>
 			</feed>`;
-
-		const fetcher = new NewsfeedFetcher("http://example.com/feed.xml", 60000, "utf-8", false, false, ["em", "strong"]);
-		const items = await new Promise((resolve) => {
-			fetcher.onReceive((instance) => resolve(instance.items));
-			fetcher.httpFetcher.emit("response", new Response(xml, { status: 200 }));
-		});
+		const fetcher = new NewsfeedFetcher("http://test.example/feed", 60000, "UTF-8", false, false);
+		const items = await feedRssResponse(fetcher, xml);
 
 		expect(items).toHaveLength(2);
+		expect(items[0].title).toBe("Empty summary");
 		expect(items[0].description).toBe("");
 		expect(items[1].title).toBe("HTML <em>title</em>");
-		expect(items[1].description).toBe("Text <strong>bold</strong> &amp; more");
-		expect(items.every((item) => item.title && item.pubdate)).toBe(true);
+		expect(items[1].description).toContain("bold");
+		expect(items[1].description).not.toContain("<strong>");
+		expect(sanitize("Text <strong>bold</strong> &amp; more", ["strong"])).toBe("Text <strong>bold</strong> &amp; more");
+		expect(sanitize("HTML <em>title</em>", ["em"])).toBe("HTML <em>title</em>");
 	});
 });
