@@ -12,7 +12,7 @@ Module.register("alert", {
 	},
 
 	getScripts () {
-		return ["notificationFx.js"];
+		return ["notificationFx.mjs"];
 	},
 
 	getStyles () {
