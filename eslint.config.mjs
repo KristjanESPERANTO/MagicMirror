@@ -117,6 +117,7 @@ export default defineConfig([
 	},
 	{
 		files: ["**/*.mjs"],
+		ignores: ["defaultmodules/**/*.mjs"],
 		languageOptions: {
 			ecmaVersion: "latest",
 			globals: {
@@ -131,6 +132,27 @@ export default defineConfig([
 			"@stylistic/quote-props": ["error", "as-needed"],
 			"no-magic-numbers": "off",
 			"sort-keys": "off"
+		}
+	},
+	{
+		// Browser scripts dynamically loaded by Module.getScripts(), served as <script type="module"> by loader.js
+		files: ["defaultmodules/**/*.mjs"],
+		languageOptions: {
+			ecmaVersion: "latest",
+			globals: {
+				...globals.browser
+			},
+			sourceType: "module"
+		},
+		extends: [importX.recommended, js.configs.recommended, stylistic.configs.all],
+		rules: {
+			"@stylistic/function-call-argument-newline": ["error", "consistent"],
+			"@stylistic/indent": ["error", "tab"],
+			"@stylistic/multiline-comment-style": "off",
+			"@stylistic/padded-blocks": "off",
+			"@stylistic/quote-props": ["error", "as-needed"],
+			"@stylistic/spaced-comment": "off",
+			"no-prototype-builtins": "off"
 		}
 	},
 	{
