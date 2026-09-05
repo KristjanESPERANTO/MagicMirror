@@ -133,6 +133,17 @@ export default defineConfig([
 		}
 	},
 	{
+		files: ["js/systeminformation.mjs"],
+		rules: {
+			"@stylistic/multiline-ternary": ["error", "always-multiline"],
+			"consistent-return": "off",
+			"func-style": "off",
+			"max-statements": "off",
+			"no-ternary": "off",
+			"one-var": "off"
+		}
+	},
+	{
 		files: ["tests/**/*.js"],
 		languageOptions: {
 			globals: {
