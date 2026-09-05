@@ -103,7 +103,6 @@ function App () {
 			Log.log(`No helper found for module: ${moduleName}.`);
 		}
 
-		// if the helper was found
 		if (loadHelper) {
 			let Module;
 			try {
