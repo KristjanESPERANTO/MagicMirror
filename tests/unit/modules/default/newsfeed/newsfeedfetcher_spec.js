@@ -81,3 +81,38 @@ describe("NewsfeedFetcher.sanitizeBasicHtml", () => {
 		expect(result).toBe("a b");
 	});
 });
+
+describe("feed parser newsfeed compatibility", () => {
+	it("normalizes empty Atom text before building items and preserves HTML content with allowed tags", async () => {
+		const xml = `<?xml version="1.0"?>
+			<feed xmlns="http://www.w3.org/2005/Atom">
+				<title>Test feed</title>
+				<id>urn:test</id>
+				<updated>2026-07-25T00:00:00Z</updated>
+				<entry>
+					<title>Empty summary</title>
+					<id>urn:empty</id>
+					<updated>2026-07-25T00:00:00Z</updated>
+					<summary type="text"></summary>
+				</entry>
+				<entry>
+					<title><![CDATA[HTML <em>title</em>]]></title>
+					<id>urn:html</id>
+					<updated>2026-07-25T00:00:00Z</updated>
+					<summary type="html"><![CDATA[Text <strong>bold</strong> &amp; more]]></summary>
+				</entry>
+			</feed>`;
+
+		const fetcher = new NewsfeedFetcher("http://example.com/feed.xml", 60000, "utf-8", false, false, ["em", "strong"]);
+		const items = await new Promise((resolve) => {
+			fetcher.onReceive((instance) => resolve(instance.items));
+			fetcher.httpFetcher.emit("response", new Response(xml, { status: 200 }));
+		});
+
+		expect(items).toHaveLength(2);
+		expect(items[0].description).toBe("");
+		expect(items[1].title).toBe("HTML <em>title</em>");
+		expect(items[1].description).toBe("Text <strong>bold</strong> &amp; more");
+		expect(items.every((item) => item.title && item.pubdate)).toBe(true);
+	});
+});
