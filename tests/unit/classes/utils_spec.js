@@ -1,7 +1,7 @@
 const fs = require("node:fs");
 
 const Log = require("../../../js/logger");
-const { checkConfigFile, ConfigError } = require("../../../js/utils");
+const { checkConfigFile, ConfigError, resolveModuleConfigs } = require("../../../js/utils");
 
 const createConfigObject = (modules, configContentFull = "module.exports = { modules: [] };") => ({
 	configFilename: "config.js",
@@ -79,5 +79,44 @@ describe("utils", () => {
 			runCheck([], "module.exports = { modules: [ };");
 		}).toThrow(/Your configuration file contains syntax errors/);
 		expect(process.exit).not.toHaveBeenCalled();
+	});
+
+	it("merges extracted module defaults on the server", () => {
+		const originalRootPath = global.root_path;
+		const originalDefaultModulesDir = global.defaultModulesDir;
+		global.root_path = process.cwd();
+		global.defaultModulesDir = "defaultmodules";
+
+		try {
+			const config = resolveModuleConfigs({
+				modules: [
+					{
+						module: "updatenotification",
+						configDeepMerge: true,
+						config: {
+							updateInterval: 1000,
+							ignoreModules: ["MMM-Test"]
+						}
+					}
+				]
+			});
+
+			expect(config.modules[0].config.updateInterval).toBe(1000);
+			expect(config.modules[0].config.refreshInterval).toBe(24 * 60 * 60 * 1000);
+			expect(config.modules[0].config.ignoreModules).toEqual(["MMM-Test"]);
+			expect(config.modules[0].config.updates).toEqual([]);
+		} finally {
+			global.root_path = originalRootPath;
+			global.defaultModulesDir = originalDefaultModulesDir;
+		}
+	});
+
+	it("warns when a module has no server-side defaults", () => {
+		global.root_path = process.cwd();
+		global.defaultModulesDir = "defaultmodules";
+
+		resolveModuleConfigs({ modules: [{ module: "not-migrated" }] });
+
+		expect(Log.warn).toHaveBeenCalledWith("Module not-migrated does not load its configuration from the server. Extract its defaults to defaults.mjs.");
 	});
 });

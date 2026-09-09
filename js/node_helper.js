@@ -1,3 +1,5 @@
+const fs = require("node:fs");
+const path = require("node:path");
 const express = require("express");
 const Log = require("logger");
 const { replaceSecretPlaceholder } = require("#server_functions");
@@ -71,14 +73,25 @@ class NodeHelper {
 
 	/**
 	 * Return this module's configuration from the server-side config.
-	 * @returns {object} The server module config, or an empty object.
+	 * @returns {object} The merged module config, or an empty object.
 	 */
 	getServerModuleConfig () {
+		const modulePath = this.path || path.join(global.root_path, global.defaultModulesDir || "defaultmodules", this.name);
+		const defaultsPath = path.join(modulePath, "defaults.mjs");
+		let defaults = {};
+
+		if (fs.existsSync(defaultsPath)) {
+			const loadedDefaults = require(defaultsPath);
+			defaults = loadedDefaults.default ?? loadedDefaults;
+		} else {
+			Log.warn(`Module ${this.name} should provide extracted defaults in defaults.mjs.`);
+		}
+
 		const configuredModules = global.config?.modules ?? [];
 		const currentModule = configuredModules.find((configuredModule) => configuredModule.module === this.name);
 		const serverModuleConfig = currentModule?.config ?? {};
 
-		return serverModuleConfig;
+		return { ...defaults, ...serverModuleConfig };
 	}
 
 	/*
