@@ -1,25 +1,41 @@
-const { execFileSync } = require("node:child_process");
-const { cpuTemperature, mem, osInfo, system, time, versions } = require("systeminformation");
-// needed with relative path because logSystemInformation is called in an own process in app.js:
-const mmVersion = require("../package").version;
-const Log = require("./logger");
+import {cpuTemperature, mem, osInfo, system, time, versions} from "systeminformation";
+import Log from "./logger.js";
+import {execFileSync} from "node:child_process";
+import {fileURLToPath} from "node:url";
+import mmPackage from "../package.json" with {type: "json"};
+
+const mmVersion = mmPackage.version;
 
 /**
- * Get the current git hash and branch of the repository.
  * @returns {{ mmGitHash: string, mmGitBranch: string }} Git hash and branch, empty if unavailable.
  */
 function getGitInfo () {
+
 	let mmGitHash = "";
 	let mmGitBranch = "";
 
 	try {
-		mmGitHash = execFileSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).trim();
-		mmGitBranch = execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf8" }).trim();
+
+		mmGitHash = execFileSync(
+			"git",
+			["rev-parse", "--short", "HEAD"],
+			{encoding: "utf8"}
+		).trim();
+		mmGitBranch = execFileSync(
+			"git",
+			["rev-parse", "--abbrev-ref", "HEAD"],
+			{encoding: "utf8"}
+		).trim();
+
 	} catch {
-		// not a git repo or git not available
+		// Not a git repo or git not available.
 	}
 
-	return { mmGitHash, mmGitBranch };
+	return {
+		mmGitHash,
+		mmGitBranch
+	};
+
 }
 
 /**
@@ -27,8 +43,10 @@ function getGitInfo () {
  * @returns {Promise<string|undefined>} The formatted system info string used in tests.
  */
 async function logSystemInformation () {
+
 	try {
-		const { mmGitHash, mmGitBranch } = getGitInfo();
+
+		const {mmGitHash, mmGitBranch} = getGitInfo();
 		const memoryData = await mem();
 		const osData = await osInfo();
 		const systemData = await system();
@@ -46,7 +64,7 @@ async function logSystemInformation () {
 			"\n####  System Information  ####",
 			`- MM:       version: v${mmVersion}${mmGitHash ? `; git: ${mmGitHash}` : ""}${mmGitBranch ? `; branch: ${mmGitBranch}` : ""}`,
 			`- SYSTEM:   manufacturer: ${systemData.manufacturer}; model: ${systemData.model}; virtual: ${systemData.virtual}`,
-			...(raspberryData ? [`            Raspberry: ${raspberryData.type}; processor: ${raspberryData.processor}; revision: ${raspberryData.revision}`] : []),
+			...raspberryData ? [`            Raspberry: ${raspberryData.type}; processor: ${raspberryData.processor}; revision: ${raspberryData.revision}`] : [],
 			`- OS:       platform: ${osData.platform}; distro: ${osData.distro}; release: ${osData.release}; arch: ${osData.arch}; kernel: ${osData.kernel}`,
 			`            displayServer: ${osData.displayServer}`,
 			`- VERSIONS: electron: ${process.env.ELECTRON_VERSION}; used node: ${process.env.USED_NODE_VERSION}; installed node: ${installedNodeVersion}; npm: ${versionData.npm}; pm2: ${versionData.pm2}`,
@@ -60,15 +78,23 @@ async function logSystemInformation () {
 
 		// Return is currently only for tests
 		return systemDataString;
+
 	} catch (error) {
+
 		Log.error(error);
+
 	}
+
 }
 
-module.exports = logSystemInformation;
+export default logSystemInformation;
 
-// This file is started in a separate process from app.js, so it must trigger
-// its own log when run directly.
-if (require.main === module) {
+/*
+ * This file is started in a separate process from app.js, so it must trigger
+ * its own log when run directly.
+ */
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+
 	logSystemInformation();
+
 }
