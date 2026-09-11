@@ -45,13 +45,10 @@ if (process.env.MM_CONFIG_FILE) {
 // The next part is here to prevent a major exception when there
 // is no internet connection. This could probable be solved better.
 process.on("uncaughtException", (err) => {
-	// ignore strange exceptions under aarch64 coming from systeminformation:
-	if (!err.stack.includes("node_modules/systeminformation")) {
-		Log.error("Whoops! There was an uncaught exception...");
-		Log.error(err);
-		Log.error("MagicMirror² will not quit, but it might be a good idea to check why this happened. Maybe no internet connection?");
-		Log.error("If you think this really is an issue, please open an issue on GitHub: https://github.com/MagicMirrorOrg/MagicMirror/issues");
-	}
+	Log.error("Whoops! There was an uncaught exception...");
+	Log.error(err);
+	Log.error("MagicMirror² will not quit, but it might be a good idea to check why this happened. Maybe no internet connection?");
+	Log.error("If you think this really is an issue, please open an issue on GitHub: https://github.com/MagicMirrorOrg/MagicMirror/issues");
 });
 
 /**
