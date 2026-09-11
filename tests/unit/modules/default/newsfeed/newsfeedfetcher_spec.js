@@ -5,6 +5,7 @@ const path = require("node:path");
 const defaults = require("../../../../../js/defaults");
 
 const NewsfeedFetcher = require(`../../../../../${defaults.defaultModulesDir}/newsfeed/newsfeedfetcher`);
+const { sanitizeBasicHtml } = require(`../../../../../${defaults.defaultModulesDir}/newsfeed/feeditem`);
 
 const xmlContent = fs.readFileSync(path.resolve(__dirname, "../../../../mocks/newsfeed_test.xml"));
 
@@ -52,7 +53,7 @@ const makeItem = ({ title = "Test title", link = "https://example.com/article", 
 
 // The full safe list users may opt into; most tests run with it enabled.
 const ALL_TAGS = ["b", "strong", "i", "em", "u", "br", "code", "s", "sub", "sup"];
-const sanitize = (html, allowedTags = ALL_TAGS) => NewsfeedFetcher.sanitizeBasicHtml(html, allowedTags);
+const sanitize = (html, allowedTags = ALL_TAGS) => sanitizeBasicHtml(html, allowedTags);
 
 describe("NewsfeedFetcher.sanitizeBasicHtml", () => {
 	it("keeps real basic formatting tags", () => {
@@ -287,5 +288,114 @@ describe("NewsfeedFetcher", () => {
 			}
 		});
 	});
+
+	describe("article URL selection", () => {
+		it("prefers the alternate Atom link over self and enclosure links", async () => {
+			const xml = `<?xml version="1.0"?>
+				<feed xmlns="http://www.w3.org/2005/Atom">
+					<title>F</title>
+					<id>urn:f</id>
+					<updated>2026-01-01T00:00:00Z</updated>
+					<entry>
+						<title>Multi link</title>
+						<id>urn:e</id>
+						<updated>2026-01-01T00:00:00Z</updated>
+						<link rel="self" href="https://example.com/feed.xml"/>
+						<link rel="alternate" href="https://example.com/real-article"/>
+						<link rel="enclosure" href="https://example.com/pod.mp3"/>
+					</entry>
+				</feed>`;
+			const fetcher = new NewsfeedFetcher("http://test.example/feed", 60000, "UTF-8", false, false);
+			const items = await feedRssResponse(fetcher, xml);
+
+			expect(items[0].url).toBe("https://example.com/real-article");
+		});
+
+		it("does not use self or enclosure links as an article URL", async () => {
+			const xml = `<?xml version="1.0"?>
+				<feed xmlns="http://www.w3.org/2005/Atom">
+					<title>F</title><updated>2026-01-01T00:00:00Z</updated>
+					<entry><title>No article link</title><updated>2026-01-01T00:00:00Z</updated>
+						<link rel="self" href="https://example.com/feed.xml"/>
+						<link rel="enclosure" href="https://example.com/pod.mp3"/>
+					</entry>
+				</feed>`;
+			const fetcher = new NewsfeedFetcher("http://test.example/feed", 60000, "UTF-8", false, false);
+			const items = await feedRssResponse(fetcher, xml);
+
+			expect(items[0].url).toBeUndefined();
+		});
+
+		it("does not use a single self link as an article URL", async () => {
+			const xml = `<?xml version="1.0"?>
+				<feed xmlns="http://www.w3.org/2005/Atom">
+					<title>F</title><updated>2026-01-01T00:00:00Z</updated>
+					<entry><title>No article link</title><updated>2026-01-01T00:00:00Z</updated>
+						<link rel="self" href="https://example.com/feed.xml"/>
+					</entry>
+				</feed>`;
+			const fetcher = new NewsfeedFetcher("http://test.example/feed", 60000, "UTF-8", false, false);
+			const items = await feedRssResponse(fetcher, xml);
+
+			expect(items[0].url).toBeUndefined();
+		});
+
+		it("ignores a non-URL guid (isPermaLink=false) instead of exposing it as url", async () => {
+			const xml = rss(`<item>
+				<title>No link</title>
+				<pubDate>Mon, 01 Jan 2024 12:00:00 +0000</pubDate>
+				<guid isPermaLink="false">tag:example,2024:abc123</guid>
+			</item>`);
+			const fetcher = new NewsfeedFetcher("http://test.example/feed", 60000, "UTF-8", false, false);
+			const items = await feedRssResponse(fetcher, xml);
+
+			expect(items[0].url).toBeUndefined();
+		});
+
+		it("uses a guid that is an actual http(s) permalink", async () => {
+			const xml = rss(`<item>
+				<title>Guid link</title>
+				<pubDate>Mon, 01 Jan 2024 12:00:00 +0000</pubDate>
+				<guid isPermaLink="true">https://example.com/guid-article</guid>
+			</item>`);
+			const fetcher = new NewsfeedFetcher("http://test.example/feed", 60000, "UTF-8", false, false);
+			const items = await feedRssResponse(fetcher, xml);
+
+			expect(items[0].url).toBe("https://example.com/guid-article");
+		});
+	});
 });
 
+describe("NewsfeedFetcher Atom compatibility", () => {
+	it("handles empty text summaries and HTML content without breaking the formatter contract", async () => {
+		const xml = `<?xml version="1.0"?>
+			<feed xmlns="http://www.w3.org/2005/Atom">
+				<title>Test feed</title>
+				<id>urn:test</id>
+				<updated>2026-07-25T00:00:00Z</updated>
+				<entry>
+					<title>Empty summary</title>
+					<id>urn:empty</id>
+					<updated>2026-07-25T00:00:00Z</updated>
+					<summary type="text"></summary>
+				</entry>
+				<entry>
+					<title><![CDATA[HTML <em>title</em>]]></title>
+					<id>urn:html</id>
+					<updated>2026-07-25T00:00:00Z</updated>
+					<summary type="html"><![CDATA[Text <strong>bold</strong> &amp; more]]></summary>
+				</entry>
+			</feed>`;
+		const fetcher = new NewsfeedFetcher("http://test.example/feed", 60000, "UTF-8", false, false);
+		const items = await feedRssResponse(fetcher, xml);
+
+		expect(items).toHaveLength(2);
+		expect(items[0].title).toBe("Empty summary");
+		expect(items[0].description).toBe("");
+		expect(items[1].title).toBe("HTML title");
+		expect(items[1].description).toContain("bold");
+		expect(items[1].description).not.toContain("<strong>");
+		expect(sanitize("Text <strong>bold</strong> &amp; more", ["strong"])).toBe("Text <strong>bold</strong> &amp; more");
+		expect(sanitize("HTML <em>title</em>", ["em"])).toBe("HTML <em>title</em>");
+	});
+});
