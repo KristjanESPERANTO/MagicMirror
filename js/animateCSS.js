@@ -156,4 +156,10 @@ const removeAnimateCSS = (element, animation) => {
 	node.classList.remove("animate__animated", animationName);
 	node.style.removeProperty("--animate-duration");
 };
+
+globalThis.AnimateCSSIn = AnimateCSSIn;
+globalThis.AnimateCSSOut = AnimateCSSOut;
+globalThis.addAnimateCSS = addAnimateCSS;
+globalThis.removeAnimateCSS = removeAnimateCSS;
+
 if (typeof window === "undefined") module.exports = { AnimateCSSIn, AnimateCSSOut, addAnimateCSS, removeAnimateCSS };
