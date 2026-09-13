@@ -39,14 +39,12 @@ class NewsfeedFetcher {
 	 * @param {number} reloadInterval - Time in ms between fetches
 	 * @param {string} encoding - Encoding of the feed (e.g., 'UTF-8')
 	 * @param {boolean} logFeedWarnings - If true log warnings when there is an error parsing a news article
-	 * @param {boolean} useCorsProxy - If true cors proxy is used for article url's
 	 * @param {string[]} allowedBasicHtmlTags - Basic formatting tags to keep in title and description. Only tags from the safe list are honored; anything else is ignored.
 	 */
-	constructor (url, reloadInterval, encoding, logFeedWarnings, useCorsProxy, allowedBasicHtmlTags = []) {
+	constructor (url, reloadInterval, encoding, logFeedWarnings, allowedBasicHtmlTags = []) {
 		this.url = url;
 		this.encoding = encoding;
 		this.logFeedWarnings = logFeedWarnings;
-		this.useCorsProxy = useCorsProxy;
 
 		// Keep only tags from the hardcoded safe list; warn about (and ignore) anything else.
 		const requestedTags = (Array.isArray(allowedBasicHtmlTags) ? allowedBasicHtmlTags : []).map((tag) => String(tag).trim().toLowerCase());
@@ -180,7 +178,6 @@ class NewsfeedFetcher {
 					description,
 					pubdate,
 					url,
-					useCorsProxy: this.useCorsProxy,
 					// Hash on the original title so the dedup identity is stable regardless of allowedBasicHtmlTags
 					hash: crypto.createHash("sha256").update(`${pubdate} :: ${title} :: ${url}`).digest("hex")
 				});
