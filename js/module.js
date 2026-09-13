@@ -377,15 +377,10 @@ export class Module {
 			usedCallback = () => {};
 		}
 
-		MM.hideModule(
-			this,
-			speed,
-			() => {
-				this.suspend();
-				usedCallback();
-			},
-			usedOptions
-		);
+		MM.hideModuleAsync(this, speed, usedOptions).then(() => {
+			this.suspend();
+			usedCallback();
+		});
 	}
 
 	/**
@@ -404,15 +399,10 @@ export class Module {
 			usedCallback = () => {};
 		}
 
-		MM.showModule(
-			this,
-			speed,
-			() => {
-				this.resume();
-				usedCallback();
-			},
-			usedOptions
-		);
+		MM.showModuleAsync(this, speed, usedOptions).then(() => {
+			this.resume();
+			usedCallback();
+		}, () => {});
 	}
 }
 
