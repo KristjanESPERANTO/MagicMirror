@@ -243,9 +243,10 @@ Module.register("newsfeed", {
 			const feedItems = feeds[feed];
 			if (this.subscribedToFeed(feed)) {
 				for (const item of feedItems) {
-					item.sourceTitle = this.titleForFeed(feed);
-					if (!(this.getFeedProperty(feed, "ignoreOldItems") && Date.now() - new Date(item.pubdate) > this.getFeedProperty(feed, "ignoreOlderThan"))) {
-						newsItems.push(item);
+					const displayItem = { ...item };
+					displayItem.sourceTitle = this.titleForFeed(feed);
+					if (!(this.getFeedProperty(feed, "ignoreOldItems") && Date.now() - new Date(displayItem.pubdate) > this.getFeedProperty(feed, "ignoreOlderThan"))) {
+						newsItems.push(displayItem);
 					}
 				}
 			}
