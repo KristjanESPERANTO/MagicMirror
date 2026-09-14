@@ -77,55 +77,79 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Creates a fetcher for a new feed if it doesn't exist yet.
-	 * Otherwise it reuses the existing one.
-	 * @param {object} feed The feed object
-	 * @param {object} config The configuration object
+	 * Validates a configured feed URL before creating or reusing a fetcher.
+	 * @param {string} url The feed URL to validate.
+	 * @returns {boolean} True when the URL is valid.
 	 */
+	validateFeedUrl (url) {
+		try {
+			new URL(url);
+			return true;
+		} catch (error) {
+			Log.error("Error: Malformed newsfeed url: ", url, error);
+			this.sendSocketNotification("NEWSFEED_ERROR", { error_type: "MODULE_ERROR_MALFORMED_URL" });
+			return false;
+		}
+	},
+
+	/**
+	 * Binds the fetcher lifecycle callbacks used by the node helper.
+	 * @param {NewsfeedFetcher} fetcher The fetcher instance.
+	 */
+	bindFetcherEvents (fetcher) {
+		fetcher.onReceive(() => {
+			this.broadcastFeeds();
+		});
+
+		fetcher.onError((fetcher, errorInfo) => {
+			Log.error("Error: Could not fetch newsfeed: ", fetcher.url, errorInfo.message || errorInfo);
+			this.sendSocketNotification("NEWSFEED_ERROR", {
+				error_type: errorInfo.translationKey
+			});
+		});
+	},
+
+	/**
+	 * Ensures one fetcher exists per feed URL and reuses it when already registered.
+	 * @param {string} url The feed URL.
+	 * @param {number} reloadInterval The current reload interval.
+	 * @param {string} encoding Feed encoding.
+	 * @param {object} config The module configuration.
+	 * @param {boolean} useCorsProxy Whether article URLs should be proxied.
+	 * @returns {NewsfeedFetcher} The active fetcher instance.
+	 */
+	ensureFetcher (url, reloadInterval, encoding, config, useCorsProxy) {
+		if (typeof this.fetchers[url] === "undefined") {
+			Log.log(`Create new newsfetcher for url: ${url} - Interval: ${reloadInterval}`);
+			const fetcher = new NewsfeedFetcher(url, reloadInterval, encoding, config.logFeedWarnings, useCorsProxy, config.allowedBasicHtmlTags);
+			this.bindFetcherEvents(fetcher);
+			this.fetchers[url] = fetcher;
+			return fetcher;
+		}
+
+		Log.log(`Use existing newsfetcher for url: ${url}`);
+		const fetcher = this.fetchers[url];
+		fetcher.setReloadInterval(reloadInterval);
+		fetcher.broadcastItems();
+		return fetcher;
+	},
+
 	createFetcher (feed, config) {
 		const url = feed.url || "";
 		const encoding = feed.encoding || "UTF-8";
 		const reloadInterval = feed.reloadInterval || config.reloadInterval || 5 * 60 * 1000;
 		const useCorsProxy = feed.useCorsProxy ?? true;
 
-		try {
-			new URL(url);
-		} catch (error) {
-			Log.error("Error: Malformed newsfeed url: ", url, error);
-			this.sendSocketNotification("NEWSFEED_ERROR", { error_type: "MODULE_ERROR_MALFORMED_URL" });
+		if (!this.validateFeedUrl(url)) {
 			return;
 		}
 
-		let fetcher;
-		if (typeof this.fetchers[url] === "undefined") {
-			Log.log(`Create new newsfetcher for url: ${url} - Interval: ${reloadInterval}`);
-			fetcher = new NewsfeedFetcher(url, reloadInterval, encoding, config.logFeedWarnings, useCorsProxy, config.allowedBasicHtmlTags);
-
-			fetcher.onReceive(() => {
-				this.broadcastFeeds();
-			});
-
-			fetcher.onError((fetcher, errorInfo) => {
-				Log.error("Error: Could not fetch newsfeed: ", fetcher.url, errorInfo.message || errorInfo);
-				this.sendSocketNotification("NEWSFEED_ERROR", {
-					error_type: errorInfo.translationKey
-				});
-			});
-
-			this.fetchers[url] = fetcher;
-		} else {
-			Log.log(`Use existing newsfetcher for url: ${url}`);
-			fetcher = this.fetchers[url];
-			fetcher.setReloadInterval(reloadInterval);
-			fetcher.broadcastItems();
-		}
-
+		const fetcher = this.ensureFetcher(url, reloadInterval, encoding, config, useCorsProxy);
 		fetcher.startFetch();
 	},
 
 	/**
-	 * Creates an object with all feed items of the different registered feeds,
-	 * and broadcasts these using sendSocketNotification.
+	 * Aggregates all current feed items from the registered fetchers and sends them to the client.
 	 */
 	broadcastFeeds () {
 		const feeds = {};
