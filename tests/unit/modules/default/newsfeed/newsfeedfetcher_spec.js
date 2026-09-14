@@ -5,6 +5,7 @@ const path = require("node:path");
 const defaults = require("../../../../../js/defaults");
 
 const NewsfeedFetcher = require(`../../../../../${defaults.defaultModulesDir}/newsfeed/newsfeedfetcher`);
+const { normalizeFeedItem, sanitizeBasicHtml } = require(`../../../../../${defaults.defaultModulesDir}/newsfeed/feeditem`);
 
 const xmlContent = fs.readFileSync(path.resolve(__dirname, "../../../../mocks/newsfeed_test.xml"));
 
@@ -33,6 +34,23 @@ const rss = (itemsXml) => {
 };
 
 /**
+ * Wrap minimal RDF 1.0 XML around one or more <item> elements.
+ * @param {string} itemsXml - One or more serialized RDF <item> elements.
+ * @returns {string} A complete RDF 1.0 feed string.
+ */
+const rdf = (itemsXml) => {
+	return `<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/">
+	<channel rdf:about="https://example.com/feed">
+		<title>RDF Test</title>
+		<link>https://example.com/</link>
+		<description>RDF description</description>
+	</channel>
+	${itemsXml}
+</rdf:RDF>`;
+};
+
+/**
  * Builds a minimal RSS <item> XML string with the given field values.
  * @param {object} [options] - Field values for the item.
  * @param {string} [options.title] - Item title.
@@ -52,7 +70,7 @@ const makeItem = ({ title = "Test title", link = "https://example.com/article", 
 
 // The full safe list users may opt into; most tests run with it enabled.
 const ALL_TAGS = ["b", "strong", "i", "em", "u", "br", "code", "s", "sub", "sup"];
-const sanitize = (html, allowedTags = ALL_TAGS) => NewsfeedFetcher.sanitizeBasicHtml(html, allowedTags);
+const sanitize = (html, allowedTags = ALL_TAGS) => sanitizeBasicHtml(html, allowedTags);
 
 describe("NewsfeedFetcher.sanitizeBasicHtml", () => {
 	it("keeps real basic formatting tags", () => {
@@ -145,9 +163,25 @@ describe("NewsfeedFetcher", () => {
 
 			expect(item.title).toBe("QPanel 0.13.0");
 			expect(item.url).toBe("https://rodrigoramirez.com/qpanel-0-13-0/");
-			expect(item.pubdate).toBe("Tue, 20 Sep 2016 11:16:08 +0000");
+			expect(item.pubdate).toBe("2016-09-20T11:16:08.000Z");
 			expect(typeof item.description).toBe("string");
 			expect(item.description.length).toBeGreaterThan(0);
+		});
+
+		it("keeps processing when an Atom summary is parsed as an object", () => {
+			const item = normalizeFeedItem({
+				title: "Object summary",
+				description: { type: "text" },
+				published: new Date("2026-09-15T12:00:00.000Z"),
+				url: "https://example.com/object-summary"
+			});
+
+			expect(item).toMatchObject({
+				title: "Object summary",
+				description: "",
+				url: "https://example.com/object-summary"
+			});
+			expect(typeof item.description).toBe("string");
 		});
 
 		it("strips HTML tags from description", async () => {
@@ -185,6 +219,26 @@ describe("NewsfeedFetcher", () => {
 			const items = await feedRssResponse(fetcher, xml);
 
 			expect(items).toHaveLength(1);
+		});
+
+		it("parses RDF items", async () => {
+			const xml = rdf(`<item rdf:about="https://example.com/rdf-item">
+				<title>RDF item</title>
+				<link>https://example.com/rdf-item</link>
+				<description>RDF item description</description>
+				<dc:date xmlns:dc="http://purl.org/dc/elements/1.1/">2026-09-14T12:00:00Z</dc:date>
+			</item>`);
+			const fetcher = new NewsfeedFetcher("http://test.example/feed", 60000, "UTF-8", false, false);
+			const items = await feedRssResponse(fetcher, xml);
+
+			expect(items).toHaveLength(1);
+			expect(items[0]).toMatchObject({
+				title: "RDF item",
+				url: "https://example.com/rdf-item",
+				description: "RDF item description",
+				pubdate: "2026-09-14T12:00:00.000Z"
+			});
+			expect(typeof items[0].pubdate).toBe("string");
 		});
 
 		it("calls onError callback when feed XML is malformed", async () => {

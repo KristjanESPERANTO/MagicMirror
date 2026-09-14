@@ -1,30 +1,9 @@
-const crypto = require("node:crypto");
 const stream = require("node:stream");
-const FeedMe = require("feedme");
 const iconv = require("iconv-lite");
-const { htmlToText } = require("html-to-text");
+const { parseFeed } = require("@rowanmanning/feed-parser");
 const Log = require("logger");
+const { SAFE_HTML_TAGS, normalizeFeedItem } = require("./feeditem");
 const HTTPFetcher = require("#http_fetcher");
-
-// The complete set of basic formatting tags users are allowed to opt into via the
-// `allowedBasicHtmlTags` config option. These are inline emphasis / line-break tags that
-// never carry attributes once sanitized, so they cannot be used for injection. Anything
-// requested outside this list is ignored (see the constructor).
-const SAFE_HTML_TAGS = ["b", "strong", "i", "em", "u", "br", "code", "s", "sub", "sup"];
-
-// html-to-text formatter that re-emits an allowed inline tag around its content,
-// so feeds that send real <em>/<strong> elements keep their emphasis. `br` is a void
-// element, so it is emitted as a single self-contained tag with no children/closing tag.
-const keepTagFormatter = (elem, walk, builder, formatOptions) => {
-	const { tagName } = formatOptions;
-	if (tagName === "br") {
-		builder.addLiteral("<br>");
-		return;
-	}
-	builder.addLiteral(`<${tagName}>`);
-	walk(elem.children, builder);
-	builder.addLiteral(`</${tagName}>`);
-};
 
 /**
  * NewsfeedFetcher - Fetches and parses RSS/Atom feed data
@@ -75,48 +54,6 @@ class NewsfeedFetcher {
 	}
 
 	/**
-	 * Sanitizes a feed string, keeping only the given allowlist of basic
-	 * formatting tags and neutralizing everything else.
-	 *
-	 * The approach is allowlist-only and therefore safe to render unescaped:
-	 * html-to-text first strips all real markup (scripts, links, images, …) and
-	 * decodes entities to text, then EVERYTHING is HTML-escaped and ONLY the exact,
-	 * attribute-free allowlisted tags are restored. No attributes, event handlers,
-	 * or other tags can survive, so arbitrary HTML/script injection is impossible.
-	 * @param {string} html - The raw title or description from the feed.
-	 * @param {string[]} [allowedTags] - Tags to keep. Callers pass an already-validated subset of SAFE_HTML_TAGS.
-	 * @returns {string} Safe HTML containing at most the allowed formatting tags.
-	 */
-	static sanitizeBasicHtml (html, allowedTags = []) {
-		// `br` keeps its default "collapse to a space" behavior unless explicitly allowed.
-		const keepTagSelectors = allowedTags.map((tagName) => ({ selector: tagName, format: "keepTag", options: { tagName } }));
-
-		const text = htmlToText(html, {
-			wordwrap: false,
-			formatters: { keepTag: keepTagFormatter },
-			selectors: [
-				{ selector: "a", options: { ignoreHref: true, noAnchorUrl: true } },
-				{ selector: "br", format: "inlineSurround", options: { prefix: " " } },
-				{ selector: "img", format: "skip" },
-				...keepTagSelectors
-			]
-		});
-
-		const escaped = text
-			.replaceAll("&", "&amp;")
-			.replaceAll("<", "&lt;")
-			.replaceAll(">", "&gt;");
-
-		if (allowedTags.length === 0) {
-			return escaped;
-		}
-
-		// Restore only the exact, attribute-free allowed opening/closing tags after escaping.
-		const restoreAllowedTags = new RegExp(`&lt;(/?(?:${allowedTags.join("|")}))&gt;`, "g");
-		return escaped.replace(restoreAllowedTags, "<$1>");
-	}
-
-	/**
 	 * Creates a parse error info object
 	 * @param {string} message - Error message
 	 * @param {Error} error - Original error
@@ -147,69 +84,45 @@ class NewsfeedFetcher {
 		}
 
 		this.items = [];
-		const parser = new FeedMe();
-
-		parser.on("item", (item) => {
-			const title = item.title;
-			let description = item.description || item.summary || item.content || "";
-			const pubdate = item.pubdate || item.published || item.updated || item["dc:date"] || item["a10:updated"];
-			const url = item.url || item.link || "";
-
-			if (title && pubdate) {
-				let displayTitle;
-				if (this.allowedBasicHtmlTags.length > 0) {
-					// Keep the configured basic formatting tags in both fields, strip everything else
-					description = NewsfeedFetcher.sanitizeBasicHtml(description, this.allowedBasicHtmlTags);
-					displayTitle = NewsfeedFetcher.sanitizeBasicHtml(title, this.allowedBasicHtmlTags);
-				} else {
-					// Let the template escape plain text exactly once.
-					const textOptions = {
-						wordwrap: false,
-						selectors: [
-							{ selector: "a", options: { ignoreHref: true, noAnchorUrl: true } },
-							{ selector: "br", format: "inlineSurround", options: { prefix: " " } },
-							{ selector: "img", format: "skip" }
-						]
-					};
-					description = htmlToText(description, textOptions);
-					displayTitle = htmlToText(title, textOptions);
-				}
-
-				this.items.push({
-					title: displayTitle,
-					description,
-					pubdate,
-					url,
-					useCorsProxy: this.useCorsProxy,
-					// Hash on the original title so the dedup identity is stable regardless of allowedBasicHtmlTags
-					hash: crypto.createHash("sha256").update(`${pubdate} :: ${title} :: ${url}`).digest("hex")
-				});
-			} else if (this.logFeedWarnings) {
-				Log.warn("Can't parse feed item:", item);
-				Log.warn(`Title: ${title}`);
-				Log.warn(`Description: ${description}`);
-				Log.warn(`Pubdate: ${pubdate}`);
-			}
-		});
-
-		parser.on("end", () => this.broadcastItems());
-
-		parser.on("ttl", (minutes) => {
-			const ttlms = Math.min(minutes * 60 * 1000, 86400000);
-			if (ttlms > this.httpFetcher.reloadInterval) {
-				this.httpFetcher.reloadInterval = ttlms;
-				Log.info(`reloadInterval set to ttl=${ttlms} for url ${this.url}`);
-			}
-		});
-
 		try {
+			const chunks = [];
 			const nodeStream = response.body instanceof stream.Readable
 				? response.body
 				: stream.Readable.fromWeb(response.body);
-			await stream.promises.pipeline(nodeStream, iconv.decodeStream(this.encoding), parser);
+			const decoder = iconv.decodeStream(this.encoding);
+			const collector = new stream.Writable({
+				write (chunk, _encoding, callback) {
+					chunks.push(chunk);
+					callback();
+				}
+			});
+			await stream.promises.pipeline(nodeStream, decoder, collector);
+
+			const feed = parseFeed(chunks.join(""));
+			const ttl = feed.element.findElementWithName("ttl");
+			if (ttl) {
+				const ttlms = Math.min(Number(ttl.textContent) * 60 * 1000, 86400000);
+				if (ttlms > this.httpFetcher.reloadInterval) {
+					this.httpFetcher.reloadInterval = ttlms;
+					Log.info(`reloadInterval set to ttl=${ttlms} for url ${this.url}`);
+				}
+			}
+
+			for (const item of feed.items) {
+				const normalizedItem = normalizeFeedItem(item, this.allowedBasicHtmlTags, this.useCorsProxy);
+				if (normalizedItem) {
+					this.items.push(normalizedItem);
+				} else if (this.logFeedWarnings) {
+					Log.warn("Can't parse feed item:", item);
+					Log.warn(`Title: ${item.title}`);
+					Log.warn(`Description: ${item.description || ""}`);
+					Log.warn(`Pubdate: ${item.published || item.updated}`);
+				}
+			}
+			this.broadcastItems();
 		} catch (error) {
-			Log.error(`${this.url} - Stream processing failed: ${error.message}`);
-			this.fetchFailedCallback(this, this.#createParseError(`Stream processing failed: ${error.message}`, error));
+			Log.error(`${this.url} - Feed parsing failed: ${error.message}`);
+			this.fetchFailedCallback(this, this.#createParseError(`Feed parsing failed: ${error.message}`, error));
 		}
 	}
 
