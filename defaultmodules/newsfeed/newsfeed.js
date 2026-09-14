@@ -201,11 +201,7 @@ Module.register("newsfeed", {
 
 	getActiveItemURL () {
 		const item = this.newsItems[this.activeItem];
-		if (item) {
-			return typeof item.url === "string" ? this.getUrlPrefix(item) + item.url : this.getUrlPrefix(item) + item.url.href;
-		} else {
-			return "";
-		}
+		return item?.url ? this.getUrlPrefix(item) + item.url : "";
 	},
 
 	/**
