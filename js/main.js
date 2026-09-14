@@ -1,5 +1,3 @@
-/* global modulePositions */
-
 // Ensure Module global bridge is initialized before main bootstrap logic runs.
 import "./module.js";
 import { AnimateCSSIn, AnimateCSSOut, addAnimateCSS, removeAnimateCSS } from "./animateCSS.js";
@@ -431,7 +429,7 @@ const _showModule = (module, speed, callback, options = {}) => {
  * update notification is not visible.
  */
 const updateWrapperStates = () => {
-	modulePositions.forEach((position) => {
+	globalThis.modulePositions.forEach((position) => {
 		const wrapper = selectWrapper(position);
 		const moduleWrappers = wrapper.getElementsByClassName("module");
 
@@ -707,7 +705,7 @@ export const MM = {
 	},
 
 	// Return all available module positions.
-	getAvailableModulePositions: modulePositions
+	getAvailableModulePositions: globalThis.modulePositions
 };
 
 // Legacy global bridge for third-party modules that reference window.MM directly.
