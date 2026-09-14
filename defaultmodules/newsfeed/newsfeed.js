@@ -141,7 +141,7 @@ Module.register("newsfeed", {
 				// Always use the direct article URL — the CORS proxy is for server-side
 				// RSS feed fetching, not for browser iframes.
 				const item = this.newsItems[this.activeItem];
-				iframe.src = item ? (typeof item.url === "string" ? item.url : item.url.href) : "";
+				iframe.src = item?.url || "";
 				this.articleIframe = iframe;
 				this.articleContainer = container;
 				container.appendChild(iframe);
@@ -182,10 +182,10 @@ Module.register("newsfeed", {
 		const item = this.newsItems[this.activeItem];
 		this.activeItemHash = item.hash;
 
-		const items = this.newsItems.map((item) => {
-			item.publishDate = moment(new Date(item.pubdate)).fromNow();
-			return item;
-		});
+		const items = this.newsItems.map((item) => ({
+			...item,
+			publishDate: moment(new Date(item.pubdate)).fromNow()
+		}));
 
 		return {
 			loaded: true,
@@ -470,7 +470,7 @@ Module.register("newsfeed", {
 					source: infoItem.sourceTitle,
 					date: infoItem.pubdate,
 					desc: infoItem.description,
-					url: typeof infoItem.url === "string" ? infoItem.url : infoItem.url.href
+					url: infoItem.url || ""
 				});
 			}
 		}
@@ -478,8 +478,8 @@ Module.register("newsfeed", {
 
 	showFullArticle () {
 		const item = this.newsItems[this.activeItem];
-		const hasUrl = item && item.url && (typeof item.url === "string" ? item.url : item.url.href);
-		if (!hasUrl) {
+		const rawUrl = item?.url;
+		if (!rawUrl) {
 			Log.debug("[newsfeed] no article URL available, skipping full article view");
 			return;
 		}
@@ -489,7 +489,6 @@ Module.register("newsfeed", {
 		// The bottom bar CSS class is only added once we know the iframe will be shown.
 		this.articleFrameCheckPending = true;
 		this.articleUnavailable = false;
-		const rawUrl = typeof item.url === "string" ? item.url : item.url.href;
 		this.sendSocketNotification("CHECK_ARTICLE_URL", { url: rawUrl });
 		clearInterval(this.timer);
 		this.timer = null;
