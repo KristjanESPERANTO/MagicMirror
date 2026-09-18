@@ -1,4 +1,5 @@
 const fs = require("node:fs");
+const path = require("node:path");
 const { loadEnvFile } = require("node:process");
 
 const modulePositions = []; // will get list from index.html
@@ -31,6 +32,52 @@ const requireFromString = (src) => {
 	m._compile(src, "");
 	return m.exports;
 };
+
+const mergeModuleConfig = (defaults, config, deep = false) => {
+	if (!deep) {
+		return { ...defaults, ...config };
+	}
+
+	const result = { ...defaults };
+	for (const [key, value] of Object.entries(config ?? {})) {
+		const defaultValue = result[key];
+		const canDeepMerge = defaultValue?.constructor === Object && value?.constructor === Object;
+		result[key] = canDeepMerge ? mergeModuleConfig(defaultValue, value, true) : value;
+	}
+
+	return result;
+};
+
+const loadModuleDefaults = (moduleName) => {
+	const moduleDirectories = [
+		global.defaultModulesDir || "defaultmodules",
+		"modules"
+	];
+
+	for (const directory of moduleDirectories) {
+		const modulePath = path.join(global.root_path, directory, moduleName);
+		const defaultsPath = path.join(modulePath, "defaults.mjs");
+		if (fs.existsSync(defaultsPath)) {
+			const defaults = require(defaultsPath);
+			return defaults.default ?? defaults;
+		}
+	}
+
+	Log.warn(`Module ${moduleName} does not load its configuration from the server. Extract its defaults to defaults.mjs.`);
+	return {};
+};
+
+const resolveModuleConfigs = (config) => ({
+	...config,
+	modules: (config.modules ?? []).map((moduleConfig) => ({
+		...moduleConfig,
+		config: mergeModuleConfig(
+			loadModuleDefaults(moduleConfig.module),
+			moduleConfig.config,
+			moduleConfig.configDeepMerge === true
+		)
+	}))
+});
 
 /**
  * Checks whether the provided module position exists.
@@ -156,12 +203,14 @@ const loadConfig = () => {
 			}
 		});
 		configContentRedacted = configContentRedacted ? configContentRedacted : configContentFull;
+		const redactedConfig = requireFromString(configContentRedacted);
+		const fullConfig = requireFromString(configContentFull);
 		const configObj = {
 			configFilename: configFilename,
 			configContentFull: configContentFull,
 			configContentRedacted: configContentRedacted,
-			redactedConf: Object.assign({}, defaults, requireFromString(configContentRedacted)),
-			fullConf: Object.assign({}, defaults, requireFromString(configContentFull))
+			redactedConf: resolveModuleConfigs(Object.assign({}, defaults, redactedConfig)),
+			fullConf: resolveModuleConfigs(Object.assign({}, defaults, fullConfig))
 		};
 
 		if (Object.keys(configObj.fullConf).length === 0) {
@@ -305,4 +354,4 @@ const checkConfigFile = (configObject) => {
 	}
 };
 
-module.exports = { loadConfig, getModulePositions, moduleHasValidPosition, checkConfigFile, ConfigError };
+module.exports = { loadConfig, resolveModuleConfigs, getModulePositions, moduleHasValidPosition, checkConfigFile, ConfigError };

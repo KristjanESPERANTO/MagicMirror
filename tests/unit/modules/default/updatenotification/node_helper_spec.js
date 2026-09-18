@@ -1,6 +1,7 @@
 import Module from "node:module";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import Log from "../../../../../js/logger";
 
 const loadNodeHelper = async (config) => {
 	vi.resetModules();
@@ -14,6 +15,10 @@ const loadNodeHelper = async (config) => {
 	// Use the real base NodeHelper so getServerModuleConfig() is exercised as the
 	// actual inherited method, but stub the git/update helpers to avoid I/O.
 	Module.prototype.require = function (id) {
+		if (id === "logger") {
+			return Log;
+		}
+
 		if (id === "node_helper") {
 			return originalRequire.call(this, path.resolve(process.cwd(), "js/node_helper.js"));
 		}
@@ -55,7 +60,7 @@ describe("updatenotification node helper", () => {
 	it("uses server configuration for update commands", async () => {
 		const trustedUpdates = [{ "MMM-Test": "git pull" }];
 		const { helper, UpdateHelper } = await loadNodeHelper({
-			modules: [{ module: "updatenotification", config: { updates: trustedUpdates, updateTimeout: 2000 } }]
+			modules: [{ module: "updatenotification", config: { updates: trustedUpdates, updateTimeout: 2000, updateInterval: 2000 } }]
 		});
 		const clientConfig = { updates: [{ "MMM-Test": "rm -rf /" }], updateInterval: 1000, updateTimeout: 1 };
 
@@ -64,7 +69,7 @@ describe("updatenotification node helper", () => {
 		const [updateConfig] = UpdateHelper.mock.calls[0];
 		expect(updateConfig.updates).toEqual(trustedUpdates);
 		expect(updateConfig.updateTimeout).toBe(2000);
-		expect(updateConfig.updateInterval).toBe(1000);
+		expect(updateConfig.updateInterval).toBe(2000);
 	});
 
 	it("ignores client update commands when the server config has none", async () => {
@@ -77,7 +82,7 @@ describe("updatenotification node helper", () => {
 
 		const [updateConfig] = UpdateHelper.mock.calls[0];
 		expect(updateConfig.updates).toEqual([]);
-		expect(updateConfig.updateInterval).toBe(1000);
+		expect(updateConfig.updateInterval).toBe(10 * 60 * 1000);
 	});
 
 	it("ignores client update commands when the module is not configured", async () => {
@@ -88,6 +93,16 @@ describe("updatenotification node helper", () => {
 
 		const [updateConfig] = UpdateHelper.mock.calls[0];
 		expect(updateConfig.updates).toEqual([]);
-		expect(updateConfig.updateInterval).toBe(1000);
+		expect(updateConfig.updateInterval).toBe(10 * 60 * 1000);
+	});
+
+	it("warns when a module does not provide extracted defaults", async () => {
+		const warn = vi.spyOn(Log, "warn").mockImplementation(() => {});
+		const { helper } = await loadNodeHelper({ modules: [] });
+		helper.name = "not-migrated";
+
+		helper.getServerModuleConfig();
+
+		expect(warn).toHaveBeenCalledWith("Module not-migrated should provide extracted defaults in defaults.mjs.");
 	});
 });
