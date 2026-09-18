@@ -2,13 +2,16 @@ import Module from "node:module";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const UpdateHelper = vi.hoisted(() => vi.fn());
+
+vi.mock("../../../../../defaultmodules/updatenotification/update_helper.mjs", () => ({ default: UpdateHelper }));
+
 const loadNodeHelper = async (config) => {
 	vi.resetModules();
 	global.config = config;
 	global.root_path = process.cwd();
 	global.defaultModulesDir = "defaultmodules";
 
-	const UpdateHelper = vi.fn();
 	const originalRequire = Module.prototype.require;
 
 	// Use the real base NodeHelper so getServerModuleConfig() is exercised as the
@@ -20,10 +23,6 @@ const loadNodeHelper = async (config) => {
 
 		if (id === "./git_helper") {
 			return vi.fn();
-		}
-
-		if (id === "./update_helper") {
-			return UpdateHelper;
 		}
 
 		return originalRequire.apply(this, arguments);
