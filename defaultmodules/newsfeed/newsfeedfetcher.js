@@ -1,6 +1,6 @@
 const stream = require("node:stream");
-const FeedParser = require("feedparser");
 const iconv = require("iconv-lite");
+const { parseFeed } = require("@rowanmanning/feed-parser");
 const Log = require("logger");
 const { normalizeFeedItem } = require("./feeditem");
 const HTTPFetcher = require("#http_fetcher");
@@ -88,39 +88,49 @@ class NewsfeedFetcher {
 		}
 
 		this.items = [];
-		const parser = new FeedParser();
-
-		parser.on("data", (item) => {
-			const normalizedItem = normalizeFeedItem(item, {
-				allowedBasicHtmlTags: this.allowedBasicHtmlTags,
-				logFeedWarnings: this.logFeedWarnings
-			});
-			if (normalizedItem) {
-				this.items.push(normalizedItem);
-			}
-		});
-
-		parser.on("meta", () => {
-			const ttlNode = parser.meta["rss:ttl"];
-			const minutes = ttlNode && parseInt(ttlNode["#"], 10);
-			if (minutes) {
-				const ttlms = Math.min(minutes * 60 * 1000, 86400000);
-				if (ttlms > this.httpFetcher.reloadInterval) {
-					this.httpFetcher.reloadInterval = ttlms;
-					Log.info(`reloadInterval set to ttl=${ttlms} for url ${this.url}`);
-				}
-			}
-		});
 
 		try {
 			const nodeStream = response.body instanceof stream.Readable
 				? response.body
 				: stream.Readable.fromWeb(response.body);
-			await stream.promises.pipeline(nodeStream, iconv.decodeStream(this.encoding), parser);
+
+			const chunks = [];
+			const collector = new stream.Writable({
+				write (chunk, _encoding, callback) {
+					chunks.push(chunk);
+					callback();
+				}
+			});
+			await stream.promises.pipeline(nodeStream, iconv.decodeStream(this.encoding), collector);
+
+			const feed = parseFeed(chunks.join(""));
+
+			const ttlElement = feed.element.findElementWithName("ttl");
+			if (ttlElement) {
+				const minutes = Number(ttlElement.textContent);
+				if (Number.isFinite(minutes) && minutes > 0) {
+					const ttlms = Math.min(minutes * 60 * 1000, 86400000);
+					if (ttlms > this.httpFetcher.reloadInterval) {
+						this.httpFetcher.reloadInterval = ttlms;
+						Log.info(`reloadInterval set to ttl=${ttlms} for url ${this.url}`);
+					}
+				}
+			}
+
+			for (const item of feed.items) {
+				const normalizedItem = normalizeFeedItem(item, {
+					allowedBasicHtmlTags: this.allowedBasicHtmlTags,
+					logFeedWarnings: this.logFeedWarnings
+				});
+				if (normalizedItem) {
+					this.items.push(normalizedItem);
+				}
+			}
+
 			this.broadcastItems();
 		} catch (error) {
-			Log.error(`${this.url} - Stream processing failed: ${error.message}`);
-			this.fetchFailedCallback(this, this.#createParseError(`Stream processing failed: ${error.message}`, error));
+			Log.error(`${this.url} - Feed parsing failed: ${error.message}`);
+			this.fetchFailedCallback(this, this.#createParseError(`Feed parsing failed: ${error.message}`, error));
 		}
 	}
 

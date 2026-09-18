@@ -59,22 +59,20 @@ const sanitizeBasicHtml = (html, allowedTags = []) => {
 };
 
 /**
- * Converts a raw feedparser item into the MagicMirror newsfeed item contract.
- * @param {object} item - The parsed feed item from feedparser.
+ * Converts a raw feed item from `@rowanmanning/feed-parser` into the MagicMirror newsfeed item contract.
+ * @param {object} item - The parsed feed item from `@rowanmanning/feed-parser`.
  * @param {object} [options] - Normalization options.
  * @param {string[]} [options.allowedBasicHtmlTags] - Inline tags allowed to survive sanitization.
  * @param {boolean} [options.logFeedWarnings] - Whether to log a warning for items missing a title or publication date.
  * @returns {{title:string, description:string, pubdate:string, url:string, hash:string}|null} The normalized item, or null when title or pubdate is missing.
  */
 const normalizeFeedItem = (item, { allowedBasicHtmlTags = [], logFeedWarnings = false } = {}) => {
-	// feedparser strips HTML from item.title; recover the raw title so inline
-	// formatting tags (e.g. <em>) in titles survive sanitizeBasicHtml below.
-	const title = (item["rss:title"] && item["rss:title"]["#"]) || (item["atom:title"] && item["atom:title"]["#"]) || item.title;
-	// feedparser returns null (not "") for a missing/empty description or summary.
-	let description = item.description || item.summary || "";
-	const pubdateValue = item.pubdate || item.date;
+	const title = item.title;
+	// @rowanmanning/feed-parser returns null (not "") for a missing/empty description.
+	let description = item.description || "";
+	const pubdateValue = item.published || item.updated;
 	const pubdate = pubdateValue instanceof Date ? pubdateValue.toISOString() : pubdateValue;
-	const url = item.link || item.guid || "";
+	const url = item.url || "";
 
 	if (!title || !pubdate) {
 		if (logFeedWarnings) {
