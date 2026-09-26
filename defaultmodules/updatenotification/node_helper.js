@@ -4,7 +4,6 @@ const NodeHelper = require("node_helper");
 
 const defaultModules = require(`${global.root_path}/${global.defaultModulesDir}/defaultmodules`);
 const GitHelper = require("./git_helper");
-const UpdateHelper = require("./update_helper");
 
 const ONE_MINUTE = 60 * 1000;
 
@@ -54,6 +53,7 @@ module.exports = NodeHelper.create({
 					// Never accept update commands from the client.
 					updates: serverConfig.updates ?? []
 				};
+				const { default: UpdateHelper } = await import("./update_helper.mjs");
 				this.updateHelper = new UpdateHelper(this.config);
 				break;
 			}
@@ -88,7 +88,7 @@ module.exports = NodeHelper.create({
 			this.sendSocketNotification("UPDATES", updates);
 		}
 
-		if (updates.length) {
+		if (updates.length && this.updateHelper) {
 			const updateResult = await this.updateHelper.parse(updates);
 			for (const update of updateResult) {
 				if (update.inProgress) {
