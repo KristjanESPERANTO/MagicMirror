@@ -17,7 +17,7 @@ const Utils = require("./utils");
 const { ConfigError } = require("./utils");
 
 const { getEnvVarsAsObj } = require("#server_functions");
-// common timeout value, provide environment override in case
+// Default fetch timeout in ms; can be overridden via the mmFetchTimeout environment variable.
 const fetch_timeout = process.env.mmFetchTimeout !== undefined ? process.env.mmFetchTimeout : 30000;
 
 // Get version number.
@@ -42,8 +42,8 @@ if (process.env.MM_CONFIG_FILE) {
 	global.configuration_file = process.env.MM_CONFIG_FILE.replace(`${global.root_path}/`, "");
 }
 
-// The next part is here to prevent a major exception when there
-// is no internet connection. This could probable be solved better.
+// Handle uncaught exceptions to keep the process running (e.g. missing network connectivity).
+// TODO: consider more targeted error handling instead of a catch-all
 process.on("uncaughtException", (err) => {
 	// ignore strange exceptions under aarch64 coming from systeminformation:
 	if (!err.stack.includes("node_modules/systeminformation")) {
