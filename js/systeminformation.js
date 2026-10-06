@@ -1,6 +1,5 @@
-const os = require("node:os");
 const { execFileSync } = require("node:child_process");
-const { osInfo, system, versions } = require("systeminformation");
+const { mem, osInfo, system, time, versions } = require("systeminformation");
 // needed with relative path because logSystemInformation is called in an own process in app.js:
 const mmVersion = require("../package").version;
 const Log = require("./logger");
@@ -16,14 +15,16 @@ try {
 
 const logSystemInformation = async () => {
 	try {
-		const systemData = await system();
+		const memoryData = await mem();
 		const osData = await osInfo();
+		const systemData = await system();
+		const timeData = await time();
 		const versionData = await versions("node,npm,pm2");
 
 		const installedNodeVersion = versionData.node;
-		const totalRam = (os.totalmem() / 1024 / 1024).toFixed(2);
-		const freeRam = (os.freemem() / 1024 / 1024).toFixed(2);
-		const usedRam = ((os.totalmem() - os.freemem()) / 1024 / 1024).toFixed(2);
+		const totalRam = (memoryData.total / 1024 / 1024).toFixed(2);
+		const freeRam = (memoryData.free / 1024 / 1024).toFixed(2);
+		const usedRam = (memoryData.used / 1024 / 1024).toFixed(2);
 
 		const systemDataString = [
 			"\n####  System Information  ####",
@@ -34,7 +35,7 @@ const logSystemInformation = async () => {
 			`- ENV:      XDG_SESSION_TYPE: ${process.env.XDG_SESSION_TYPE}; MM_CONFIG_FILE: ${process.env.MM_CONFIG_FILE}`,
 			`            WAYLAND_DISPLAY:  ${process.env.WAYLAND_DISPLAY}; DISPLAY: ${process.env.DISPLAY}; ELECTRON_ENABLE_GPU: ${process.env.ELECTRON_ENABLE_GPU}`,
 			`- RAM:      total: ${totalRam} MB; free: ${freeRam} MB; used: ${usedRam} MB`,
-			`- OTHERS:   uptime: ${Math.floor(os.uptime() / 60)} minutes; timeZone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`
+			`- OTHERS:   uptime: ${Math.floor(timeData.uptime / 60)} minutes; timeZone: ${timeData.timezoneName}`
 		].join("\n");
 		Log.info(systemDataString);
 
