@@ -4,17 +4,31 @@ const { cpuTemperature, mem, osInfo, system, time, versions } = require("systemi
 const mmVersion = require("../package").version;
 const Log = require("./logger");
 
-let mmGitHash = "";
-let mmGitBranch = "";
-try {
-	mmGitHash = execFileSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).trim();
-	mmGitBranch = execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf8" }).trim();
-} catch {
-	// not a git repo or git not available
+/**
+ * Get the current git hash and branch of the repository.
+ * @returns {{ mmGitHash: string, mmGitBranch: string }} Git hash and branch, empty if unavailable.
+ */
+function getGitInfo () {
+	let mmGitHash = "";
+	let mmGitBranch = "";
+
+	try {
+		mmGitHash = execFileSync("git", ["rev-parse", "--short", "HEAD"], { encoding: "utf8" }).trim();
+		mmGitBranch = execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf8" }).trim();
+	} catch {
+		// not a git repo or git not available
+	}
+
+	return { mmGitHash, mmGitBranch };
 }
 
-const logSystemInformation = async () => {
+/**
+ * Log the current system information to the console.
+ * @returns {Promise<string|undefined>} The formatted system info string used in tests.
+ */
+async function logSystemInformation () {
 	try {
+		const { mmGitHash, mmGitBranch } = getGitInfo();
 		const memoryData = await mem();
 		const osData = await osInfo();
 		const systemData = await system();
@@ -41,6 +55,7 @@ const logSystemInformation = async () => {
 			`- RAM:      total: ${totalRam} MB; free: ${freeRam} MB; used: ${usedRam} MB`,
 			`- OTHERS:   uptime: ${Math.floor(timeData.uptime / 60)} minutes; timeZone: ${timeData.timezoneName}; cpuTemp: ${temperatureData.max ?? temperatureData.main ?? "n/a"} C`
 		].join("\n");
+
 		Log.info(systemDataString);
 
 		// Return is currently only for tests
@@ -48,7 +63,12 @@ const logSystemInformation = async () => {
 	} catch (error) {
 		Log.error(error);
 	}
-};
+}
 
 module.exports = logSystemInformation;
-logSystemInformation();
+
+// This file is started in a separate process from app.js, so it must trigger
+// its own log when run directly.
+if (require.main === module) {
+	logSystemInformation();
+}
