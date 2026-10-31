@@ -27,7 +27,7 @@ global.mmTestMode = process.env.mmTestMode === "true";
 Log.log(`Starting MagicMirror: v${global.version}`);
 
 // Log system information in a subprocess so it is shown even on early startup failures.
-spawn("node ./js/systeminformation.js", {
+spawn("node ./js/systeminformation.mjs", {
 	env: {
 		...process.env,
 		ELECTRON_VERSION: `${process.versions.electron}`,
