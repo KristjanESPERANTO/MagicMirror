@@ -82,10 +82,17 @@ const getSunTimes = (date, lat, lon) => {
  * @param {Date} date - The date/time to check
  * @param {Date} sunrise - Sunrise time
  * @param {Date} sunset - Sunset time
+ * @param {number} [lat] - Latitude used when sunrise or sunset is unavailable
+ * @param {number} [lon] - Longitude used when sunrise or sunset is unavailable
  * @returns {boolean} True if during daylight hours
  */
-const isDayTime = (date, sunrise, sunset) => {
-	if (!sunrise || !sunset) {
+const isDayTime = (date, sunrise, sunset, lat, lon) => {
+	const hasSunTimes = sunrise instanceof Date && sunset instanceof Date
+	  && Number.isFinite(sunrise.getTime()) && Number.isFinite(sunset.getTime());
+	if (!hasSunTimes) {
+		if (Number.isFinite(lat) && Number.isFinite(lon)) {
+			return SunCalc.getPosition(date, lat, lon).altitude > 0;
+		}
 		return true; // Default to day if times unavailable
 	}
 	return date >= sunrise && date < sunset;
