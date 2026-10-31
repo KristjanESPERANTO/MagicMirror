@@ -39,13 +39,12 @@ spawn("node ./js/systeminformation.mjs", {
 	stdio: "inherit"
 });
 
-// Handle uncaught exceptions to keep the process running (e.g. missing network connectivity).
-// TODO: consider more targeted error handling instead of a catch-all
-process.on("uncaughtException", (err) => {
-	Log.error("Whoops! There was an uncaught exception...");
-	Log.error(err);
-	Log.error("MagicMirror² will not quit, but it might be a good idea to check why this happened. Maybe no internet connection?");
-	Log.error("If you think this really is an issue, please open an issue on GitHub: https://github.com/MagicMirrorOrg/MagicMirror/issues");
+// Last-resort logging also covers third-party helpers; continuing does not guarantee a healthy process.
+process.on("uncaughtException", (error, origin) => {
+	Log.error(`Whoops! There was an uncaught exception... (${origin}):`);
+	Log.error(error);
+	Log.error("MagicMirror² will not quit, but it might be a good idea to check why this happened. Some functionality may no longer work correctly.");
+	Log.error("If you think this really is an issue, please report it to the affected third-party module's maintainer. For issues with MagicMirror² itself, please open an issue on GitHub: https://github.com/MagicMirrorOrg/MagicMirror/issues");
 });
 
 /**
