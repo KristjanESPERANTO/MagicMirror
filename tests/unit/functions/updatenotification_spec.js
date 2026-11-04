@@ -149,6 +149,19 @@ describe("Updatenotification", () => {
 			`);
 		});
 
+		describe("getStatusInfo", () => {
+			it("parses the upstream branch and behind count", async () => {
+				gitStatusOut = "## develop...origin/develop [ahead 8, behind 1]\n";
+
+				const status = await gitHelper.getStatusInfo({ module: "MMM-A", folder: "mock-path" });
+
+				expect(status.current).toBe("develop");
+				expect(status.tracking).toBe("origin/develop");
+				expect(status.behind).toBe(1);
+				expect(status.isBehindInStatus).toBe(true);
+			});
+		});
+
 		it("returns status information early if isBehindInStatus", async () => {
 			gitStatusOut = "## develop...origin/develop [behind 5]";
 

@@ -108,14 +108,13 @@ const CalendarUtils = {
 			if (typeof transform === "object") {
 				if (typeof transform.search !== "undefined" && transform.search !== "" && typeof transform.replace !== "undefined") {
 					const regParts = transform.search.match(/^\/(.+)\/([gim]*)$/);
-					let needle = new RegExp(transform.search, "g");
-					if (regParts) {
-						// the parsed pattern is a regexp with flags.
-						needle = new RegExp(regParts[1], regParts[2]);
-					}
+					const hasYearMatchGroup = typeof transform.yearmatchgroup !== "undefined" && transform.yearmatchgroup !== "";
+					const needle = regParts
+						? new RegExp(regParts[1], regParts[2])
+						: hasYearMatchGroup ? new RegExp(transform.search, "g") : null;
 
 					let replacement = transform.replace;
-					if (typeof transform.yearmatchgroup !== "undefined" && transform.yearmatchgroup !== "") {
+					if (hasYearMatchGroup) {
 						const yearmatch = [...title.matchAll(needle)];
 						if (yearmatch.length > 0 && yearmatch[0].length >= transform.yearmatchgroup + 1 && yearmatch[0][transform.yearmatchgroup] * 1 >= 1900) {
 							const calcage = new Date().getFullYear() - yearmatch[0][transform.yearmatchgroup] * 1;
@@ -123,7 +122,9 @@ const CalendarUtils = {
 							replacement = replacement.replace(searchstr, calcage);
 						}
 					}
-					transformedTitle = transformedTitle.replace(needle, replacement);
+					transformedTitle = needle
+						? transformedTitle.replace(needle, replacement)
+						: transformedTitle.replaceAll(transform.search, replacement);
 				}
 			}
 		}

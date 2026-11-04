@@ -147,6 +147,11 @@ describe("Calendar utils tests", () => {
 			const transformedTitle = CalendarUtils.titleTransform("Michael Teeuw's birthday", [{ search: "'s birthday", replace: "" }]);
 			expect(CalendarUtils.shorten(transformedTitle, 10, true, 2)).toBe("Michael <br>Teeuw");
 		});
+
+		it("treats a plain search string literally", () => {
+			const transformedTitle = CalendarUtils.titleTransform("C++ and C++", [{ search: "C++", replace: "CPP" }]);
+			expect(transformedTitle).toBe("CPP and CPP");
+		});
 	});
 
 	describe("titleTransform with yearmatchgroup", () => {

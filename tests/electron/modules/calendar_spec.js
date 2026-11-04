@@ -393,7 +393,7 @@ describe("Calendar module", () => {
 		it("absolute timeFormat with dateFormat LLL does not duplicate start time", async () => {
 			await startCalendarShowEndScenario("event_with_time_same_day_yearly_display_end_absolute_dateformat_lll");
 			const timeText = await getFirstEventTimeText();
-			const timeTokens = timeText.match(/\d{1,2}:\d{2}(?:\s?[AP]M)?/gi) || [];
+			const timeTokens = timeText.match(/\d{1,2}:\d{2}(?:\s[AP]M|[AP]M)?/gi) || [];
 			expect(timeTokens).toHaveLength(2);
 			expect(timeText).toContain("-");
 		});
@@ -402,7 +402,7 @@ describe("Calendar module", () => {
 			await startCalendarShowEndScenario("event_with_time_same_day_yearly_display_end_relative_hide_time");
 			const timeText = await getFirstEventTimeText();
 			expect(timeText).toContain("25th.Oct");
-			expect(timeText.match(/\d{1,2}:\d{2}(?:\s?[AP]M)?/gi) || []).toHaveLength(0);
+			expect(timeText.match(/\d{1,2}:\d{2}(?:\s[AP]M|[AP]M)?/gi) || []).toHaveLength(0);
 		});
 	});
 

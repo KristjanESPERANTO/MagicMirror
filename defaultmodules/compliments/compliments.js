@@ -26,7 +26,6 @@ Module.register("compliments", {
 	lastIndexUsed: -1,
 	// Set currentweather from module
 	currentWeatherType: "",
-	cron_regex: /^(((\d+,)+\d+|((\d+|[*])[/]\d+|((JAN|FEB|APR|MA[RY]|JU[LN]|AUG|SEP|OCT|NOV|DEC)(-(JAN|FEB|APR|MA[RY]|JU[LN]|AUG|SEP|OCT|NOV|DEC))?))|(\d+-\d+)|\d+(-\d+)?[/]\d+(-\d+)?|\d+|[*]|(MON|TUE|WED|THU|FRI|SAT|SUN)(-(MON|TUE|WED|THU|FRI|SAT|SUN))?) ?){5}$/i,
 	date_regex: "[1-9.][0-9.][0-9.]{2}-([0][1-9]|[1][0-2])-([1-2][0-9]|[0][1-9]|[3][0-1])",
 	pre_defined_types: ["anytime", "morning", "afternoon", "evening"],
 	// Define required scripts.
@@ -175,14 +174,14 @@ Module.register("compliments", {
 		for (const entry of temp_list) {
 			// check if this could be a cron type entry
 			if (this.isCronEntry(entry)) {
-				// make sure the regex is valid
-				if (new RegExp(this.cron_regex).test(entry)) {
-					// check if we are in the time range for the cron entry
+				try {
+					// Croner validates the expression and finds its next run.
 					if (this.getSecondsUntilNextCronRun(entry, now.set("seconds", 0).toDate()) <= 1) {
-						// if so, use its notice entries
 						Array.prototype.push.apply(date_compliments, this.config.compliments[entry]);
 					}
-				} else Log.error(`[compliments] cron syntax invalid=${JSON.stringify(entry)}`);
+				} catch {
+					Log.error(`[compliments] cron syntax invalid=${JSON.stringify(entry)}`);
+				}
 			} else if (new RegExp(entry).test(date)) {
 				Array.prototype.push.apply(date_compliments, this.config.compliments[entry]);
 			}
