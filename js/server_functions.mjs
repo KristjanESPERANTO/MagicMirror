@@ -33,6 +33,7 @@ const replaceSecretPlaceholder = (input, allowedSecrets) => {
 		}
 		return input;
 	}
+	let environment;
 	return input.replaceAll(/\*\*(SECRET_[^*]+)\*\*/g, (placeholder, secretName) => {
 		// Block replacing secrets that are not explicitly allowed.
 		if (allowedSecrets && !allowedSecrets.has(secretName)) {
@@ -40,7 +41,8 @@ const replaceSecretPlaceholder = (input, allowedSecrets) => {
 		}
 
 		// Load the real value from the environment. Fallback to placeholder if missing.
-		return process.env[secretName] || placeholder;
+		environment ??= new Map(Object.entries(process.env));
+		return environment.get(secretName) || placeholder;
 	});
 };
 
