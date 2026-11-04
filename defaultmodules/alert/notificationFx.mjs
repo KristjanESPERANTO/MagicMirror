@@ -12,21 +12,6 @@
  */
 
 /**
- * Extend one object with another one
- * @param {object} target The object to extend
- * @param {object} source The object which extends the target, overwriting existing keys
- * @returns {object} The merged object
- */
-const extend = (target, source) => {
-	for (const key in source) {
-		if (Object.hasOwn(source, key)) {
-			target[key] = source[key];
-		}
-	}
-	return target;
-};
-
-/**
  * Notification widget with configurable layout/effect, auto-dismiss and click-to-dismiss.
  */
 export class NotificationFx {
@@ -80,8 +65,10 @@ export class NotificationFx {
 	 * @param {object} options The configuration options
 	 */
 	constructor (options) {
-		this.options = extend({}, NotificationFx.defaultOptions);
-		extend(this.options, options);
+		this.options = {
+			...NotificationFx.defaultOptions,
+			...options
+		};
 		this.#init();
 	}
 
