@@ -173,7 +173,7 @@ class SMHIProvider extends WeatherProvider {
 	#convertWeatherDataToObject (weatherData, coordinates) {
 		const date = new Date(weatherData.time);
 		const { sunrise, sunset } = getSunTimes(date, coordinates.lat, coordinates.lon);
-		const isDay = isDayTime(date, sunrise, sunset);
+		const isDay = isDayTime(date, sunrise, sunset, coordinates.lat, coordinates.lon);
 
 		const current = {
 			date: date,
@@ -257,7 +257,7 @@ class SMHIProvider extends WeatherProvider {
 
 			// Track weather types during daytime
 			const { sunrise: daySunrise, sunset: daySunset } = getSunTimes(objDate, coordinates.lat, coordinates.lon);
-			const isDay = isDayTime(objDate, daySunrise, daySunset);
+			const isDay = isDayTime(objDate, daySunrise, daySunset, coordinates.lat, coordinates.lon);
 
 			if (isDay) {
 				dayWeatherTypes.push(weatherObject.weatherType);

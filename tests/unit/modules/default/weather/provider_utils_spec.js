@@ -124,6 +124,16 @@ describe("Weather provider utils tests", () => {
 			const noon = new Date("2026-02-02T12:00:00Z");
 			expect(providerUtils.isDayTime(noon, null, null)).toBe(true);
 		});
+
+		it("should return false during polar night when sun times are unavailable", () => {
+			const noon = new Date("2026-12-21T11:00:00Z");
+			expect(providerUtils.isDayTime(noon, null, null, 69.65, 18.96)).toBe(false);
+		});
+
+		it("should return true during polar day when sun times are unavailable", () => {
+			const noon = new Date("2026-06-21T10:00:00Z");
+			expect(providerUtils.isDayTime(noon, null, null, 69.65, 18.96)).toBe(true);
+		});
 	});
 
 	describe("formatTimezoneOffset", () => {

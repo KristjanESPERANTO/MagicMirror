@@ -260,7 +260,7 @@ class WeatherGovProvider extends WeatherProvider {
 		current.sunset = sunset;
 
 		// Determine if daytime
-		const isDay = isDayTime(current.date, current.sunrise, current.sunset);
+		const isDay = isDayTime(current.date, current.sunrise, current.sunset, this.config.lat, this.config.lon);
 		current.weatherType = this.#convertWeatherType(currentWeatherData.textDescription, isDay);
 
 		return current;
