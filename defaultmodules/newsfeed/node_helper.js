@@ -9,7 +9,7 @@ module.exports = NodeHelper.create({
 	// Override start method.
 	start () {
 		Log.log(`Starting node helper for: ${this.name}`);
-		this.fetchers = [];
+		this.fetchers = new Map();
 	},
 
 	// Override socketNotificationReceived received.
@@ -96,7 +96,7 @@ module.exports = NodeHelper.create({
 		}
 
 		let fetcher;
-		if (typeof this.fetchers[url] === "undefined") {
+		if (!this.fetchers.has(url)) {
 			Log.log(`Create new newsfetcher for url: ${url} - Interval: ${reloadInterval}`);
 			fetcher = new NewsfeedFetcher(url, reloadInterval, encoding, config.logFeedWarnings, config.allowedBasicHtmlTags);
 
@@ -111,10 +111,10 @@ module.exports = NodeHelper.create({
 				});
 			});
 
-			this.fetchers[url] = fetcher;
+			this.fetchers.set(url, fetcher);
 		} else {
 			Log.log(`Use existing newsfetcher for url: ${url}`);
-			fetcher = this.fetchers[url];
+			fetcher = this.fetchers.get(url);
 			fetcher.setReloadInterval(reloadInterval);
 			fetcher.broadcastItems();
 		}
@@ -127,10 +127,7 @@ module.exports = NodeHelper.create({
 	 * and broadcasts these using sendSocketNotification.
 	 */
 	broadcastFeeds () {
-		const feeds = {};
-		for (const url in this.fetchers) {
-			feeds[url] = this.fetchers[url].items;
-		}
+		const feeds = Object.fromEntries([...this.fetchers].map(([url, fetcher]) => [url, fetcher.items]));
 		this.sendSocketNotification("NEWS_ITEMS", feeds);
 	}
 });
