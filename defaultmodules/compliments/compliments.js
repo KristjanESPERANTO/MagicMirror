@@ -146,13 +146,15 @@ Module.register("compliments", {
 			timeOfDay = "evening";
 		}
 
-		if (this.config.compliments.hasOwnProperty(timeOfDay)) {
-			compliments = [...this.config.compliments[timeOfDay]];
+		const timeOfDayCompliments = Object.getOwnPropertyDescriptor(this.config.compliments, timeOfDay);
+		if (timeOfDayCompliments) {
+			compliments = [...timeOfDayCompliments.value];
 		}
 
 		// Add compliments based on weather
-		if (this.currentWeatherType in this.config.compliments) {
-			Array.prototype.push.apply(compliments, this.config.compliments[this.currentWeatherType]);
+		const weatherCompliments = Object.getOwnPropertyDescriptor(this.config.compliments, this.currentWeatherType);
+		if (weatherCompliments) {
+			Array.prototype.push.apply(compliments, weatherCompliments.value);
 			// if the predefine list doesn't include it (yet)
 			if (!this.pre_defined_types.includes(this.currentWeatherType)) {
 				// add it
@@ -172,18 +174,19 @@ Module.register("compliments", {
 		const date_compliments = [];
 		// Add compliments for special day/times
 		for (const entry of temp_list) {
+			const entryCompliments = Object.getOwnPropertyDescriptor(this.config.compliments, entry)?.value;
 			// check if this could be a cron type entry
 			if (this.isCronEntry(entry)) {
 				try {
 					// Croner validates the expression and finds its next run.
 					if (this.getSecondsUntilNextCronRun(entry, now.set("seconds", 0).toDate()) <= 1) {
-						Array.prototype.push.apply(date_compliments, this.config.compliments[entry]);
+						Array.prototype.push.apply(date_compliments, entryCompliments);
 					}
 				} catch {
 					Log.error(`[compliments] cron syntax invalid=${JSON.stringify(entry)}`);
 				}
 			} else if (new RegExp(entry).test(date)) {
-				Array.prototype.push.apply(date_compliments, this.config.compliments[entry]);
+				Array.prototype.push.apply(date_compliments, entryCompliments);
 			}
 		}
 
@@ -254,7 +257,7 @@ Module.register("compliments", {
 			index = this.lastIndexUsed >= compliments.length - 1 ? 0 : ++this.lastIndexUsed;
 		}
 
-		return compliments[index] || "";
+		return compliments.at(index) || "";
 	},
 
 	// Override dom generator.
