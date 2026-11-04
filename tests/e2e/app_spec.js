@@ -1,5 +1,6 @@
+import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 const require = createRequire(import.meta.url);
 const Log = require("logger");
@@ -7,6 +8,19 @@ const NodeHelper = require("../../js/node_helper.js");
 const helpers = require("./helpers/global-setup.js");
 
 describe("App restart lifecycle", () => {
+	let uncaughtExceptionHandler;
+
+	beforeAll(async () => {
+		const existingListeners = process.listeners("uncaughtException");
+		try {
+			await helpers.startApplication("tests/configs/without_modules.js");
+			uncaughtExceptionHandler = process.listeners("uncaughtException").find((listener) => !existingListeners.includes(listener));
+			assert.ok(uncaughtExceptionHandler, "App must register an uncaughtException handler");
+		} finally {
+			await helpers.stopApplication(0);
+		}
+	});
+
 	afterEach(async () => {
 		await helpers.stopApplication(0);
 		vi.restoreAllMocks();
@@ -61,5 +75,18 @@ describe("App restart lifecycle", () => {
 		expect(logMessage).toHaveBeenCalledWith("Starting node helper for: calendar");
 		expect(startHelper).toHaveBeenCalledTimes(hook === "start" ? 1 : 0);
 		expect(logError).toHaveBeenCalledWith(expect.stringContaining("esmHelper"), expect.objectContaining({ message: `${phase} failed` }));
+	});
+
+	it.each(["uncaughtException", "unhandledRejection"])("logs an Error without throwing or exiting (%s)", (origin) => {
+		const error = new Error("Unexpected failure");
+		const logError = vi.spyOn(Log, "error");
+		const exit = vi.spyOn(process, "exit").mockImplementation(() => {});
+
+		expect(() => uncaughtExceptionHandler(error, origin)).not.toThrow();
+
+		expect(logError).toHaveBeenNthCalledWith(1, `Whoops! There was an uncaught exception... (${origin}):`);
+		expect(logError).toHaveBeenNthCalledWith(2, error);
+		expect(logError).toHaveBeenCalledWith(expect.stringContaining("Some functionality may no longer work correctly"));
+		expect(exit).not.toHaveBeenCalled();
 	});
 });
