@@ -147,6 +147,23 @@ describe("Translator", () => {
 			const translation = Translator.translate({ name: "MMM-Module" }, "MISSING");
 			expect(translation).toBe("MISSING");
 		});
+
+		it("should ignore inherited translation keys", async () => {
+			const Translator = await getFreshTranslator();
+			setTranslations(Translator);
+
+			expect(Translator.translate({ name: "MMM-Module" }, "__proto__")).toBe("__proto__");
+		});
+
+		it("should ignore inherited template variables", async () => {
+			const Translator = await getFreshTranslator();
+			setTranslations(Translator);
+			const variables = Object.create({ username: "inherited" });
+
+			const translation = Translator.translate({ name: "MMM-Module" }, "Hello {username}", variables);
+
+			expect(translation).toBe("Hallo {username}");
+		});
 	});
 
 	describe("load", () => {
