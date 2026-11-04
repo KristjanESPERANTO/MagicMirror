@@ -7,7 +7,7 @@ module.exports = NodeHelper.create({
 	// Override start method.
 	start () {
 		Log.log(`Starting node helper for: ${this.name}`);
-		this.fetchers = [];
+		this.fetchers = new Map();
 	},
 
 	// Override socketNotificationReceived method.
@@ -16,12 +16,12 @@ module.exports = NodeHelper.create({
 			this.createFetcher(payload.url, payload.fetchInterval, payload.excludedEvents, payload.maximumEntries, payload.maximumNumberOfDays, payload.auth, payload.broadcastPastEvents, payload.selfSignedCert, payload.id);
 		} else if (notification === "FETCH_CALENDAR") {
 			const key = payload.id + payload.url;
-			if (typeof this.fetchers[key] === "undefined") {
+			if (!this.fetchers.has(key)) {
 				Log.error("No fetcher exists with key: ", key);
 				this.sendSocketNotification("CALENDAR_ERROR", { error_type: "MODULE_ERROR_UNSPECIFIED" });
 				return;
 			}
-			this.fetchers[key].fetchCalendar();
+			this.fetchers.get(key).fetchCalendar();
 		}
 	},
 
@@ -49,7 +49,8 @@ module.exports = NodeHelper.create({
 
 		let fetcher;
 		let fetchIntervalCorrected;
-		if (typeof this.fetchers[identifier + url] === "undefined") {
+		const key = identifier + url;
+		if (!this.fetchers.has(key)) {
 			if (fetchInterval < 60000) {
 				Log.warn(`fetchInterval for url ${url} must be >= 60000`);
 				fetchIntervalCorrected = 60000;
@@ -69,11 +70,11 @@ module.exports = NodeHelper.create({
 				});
 			});
 
-			this.fetchers[identifier + url] = fetcher;
+			this.fetchers.set(key, fetcher);
 			fetcher.fetchCalendar();
 		} else {
 			Log.log(`Use existing calendarfetcher for url: ${url}`);
-			fetcher = this.fetchers[identifier + url];
+			fetcher = this.fetchers.get(key);
 			// Check if calendar data is stale and needs refresh
 			if (fetcher.shouldRefetch()) {
 				Log.log(`Calendar data is stale, fetching fresh data for url: ${url}`);
