@@ -7,11 +7,13 @@ import {configs as jsdocConfigs} from "eslint-plugin-jsdoc";
 import markdown from "@eslint/markdown";
 import {configs as packageJsonConfigs} from "eslint-plugin-package-json";
 import playwright from "eslint-plugin-playwright";
+import pluginSecurity from "eslint-plugin-security";
 import stylistic from "@stylistic/eslint-plugin";
 import vitest from "@vitest/eslint-plugin";
 
 export default defineConfig([
 	globalIgnores(["config/**", "modules/**/*", "js/positions.js", "tests/configs/config_variables.js", "tests/mocks/**/package.json", "defaultmodules/*/package.json"]),
+	pluginSecurity.configs.recommended,
 	{
 		files: ["**/*.css"],
 		language: "css/css",
