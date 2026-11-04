@@ -53,7 +53,7 @@
 		"install-mm:dev": "npm install --no-audit --no-fund --no-update-notifier && npx playwright install chromium",
 		"lint:fix": "eslint --fix && prettier . --write",
 		"prepare": "[ -f node_modules/.bin/husky ] && husky || echo no husky installed.",
-		"server": "node ./serveronly",
+		"server": "node ./serveronly/index.mjs",
 		"server:watch": "node ./serveronly/watcher.mjs",
 		"start": "node --run start:wayland",
 		"start:dev": "node --run start:wayland -- dev",
