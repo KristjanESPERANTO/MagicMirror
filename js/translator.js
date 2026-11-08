@@ -1,5 +1,12 @@
 import "../translations/translations.js";
 
+const getOwnPropertyDescriptor = (object, key) => {
+	if (object === null || typeof object !== "object") {
+		return undefined;
+	}
+	return Object.getOwnPropertyDescriptor(object, key);
+};
+
 /**
  * Load a JSON file via fetch.
  * @param {string} file Path of the file we want to load.
@@ -50,28 +57,27 @@ export const Translator = {
 				return template;
 			}
 			let templateToUse = template;
-			if (variables.fallback && !template.match(new RegExp("{.+}"))) {
-				templateToUse = variables.fallback;
+			const fallback = getOwnPropertyDescriptor(variables, "fallback")?.value;
+			if (fallback && !template.match(new RegExp("{.+}"))) {
+				templateToUse = fallback;
 			}
 			return templateToUse.replace(new RegExp("{([^}]+)}", "g"), (_unused, varName) => {
-				return varName in variables ? variables[varName] : `{${varName}}`;
+				const variable = getOwnPropertyDescriptor(variables, varName);
+				return variable ? variable.value : `{${varName}}`;
 			});
 		};
 
-		if (this.translations[module.name] && key in this.translations[module.name]) {
-			return createStringFromTemplate(this.translations[module.name][key], variables);
-		}
-
-		if (key in this.coreTranslations) {
-			return createStringFromTemplate(this.coreTranslations[key], variables);
-		}
-
-		if (this.translationsFallback[module.name] && key in this.translationsFallback[module.name]) {
-			return createStringFromTemplate(this.translationsFallback[module.name][key], variables);
-		}
-
-		if (key in this.coreTranslationsFallback) {
-			return createStringFromTemplate(this.coreTranslationsFallback[key], variables);
+		const translationSources = [
+			getOwnPropertyDescriptor(this.translations, module.name)?.value,
+			this.coreTranslations,
+			getOwnPropertyDescriptor(this.translationsFallback, module.name)?.value,
+			this.coreTranslationsFallback
+		];
+		for (const source of translationSources) {
+			const translation = getOwnPropertyDescriptor(source, key);
+			if (translation) {
+				return createStringFromTemplate(translation.value, variables);
+			}
 		}
 
 		return key;
@@ -86,13 +92,18 @@ export const Translator = {
 	async load (module, file, isFallback) {
 		Log.log(`[translator] ${module.name} - Load translation${isFallback ? " fallback" : ""}: ${file}`);
 
-		if (this.translationsFallback[module.name]) {
+		if (getOwnPropertyDescriptor(this.translationsFallback, module.name)) {
 			return;
 		}
 
 		const json = await loadJSON(module.file(file));
-		const property = isFallback ? "translationsFallback" : "translations";
-		this[property][module.name] = json;
+		const translations = isFallback ? this.translationsFallback : this.translations;
+		Object.defineProperty(translations, module.name, {
+			configurable: true,
+			enumerable: true,
+			value: json,
+			writable: true
+		});
 	},
 
 	/**
@@ -100,9 +111,10 @@ export const Translator = {
 	 * @param {string} lang The language identifier of the core language.
 	 */
 	async loadCoreTranslations (lang) {
-		if (lang in globalThis.translations) {
-			Log.log(`[translator] Loading core translation file: ${globalThis.translations[lang]}`);
-			this.coreTranslations = await loadJSON(globalThis.translations[lang]);
+		const translationFile = getOwnPropertyDescriptor(globalThis.translations, lang)?.value;
+		if (translationFile) {
+			Log.log(`[translator] Loading core translation file: ${translationFile}`);
+			this.coreTranslations = await loadJSON(translationFile);
 		} else {
 			Log.log("[translator] Configured language not found in core translations.");
 		}
@@ -117,8 +129,9 @@ export const Translator = {
 	async loadCoreTranslationsFallback () {
 		const first = Object.keys(globalThis.translations)[0];
 		if (first) {
-			Log.log(`[translator] Loading core translation fallback file: ${globalThis.translations[first]}`);
-			this.coreTranslationsFallback = await loadJSON(globalThis.translations[first]);
+			const translationFile = getOwnPropertyDescriptor(globalThis.translations, first)?.value;
+			Log.log(`[translator] Loading core translation fallback file: ${translationFile}`);
+			this.coreTranslationsFallback = await loadJSON(translationFile);
 		}
 	}
 };
