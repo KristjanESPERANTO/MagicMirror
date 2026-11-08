@@ -15,15 +15,15 @@ const DEFAULT_TIMEOUT = 30000; // 30 seconds
  * This allows HTTPFetcher to provide ready-to-use translation keys,
  * eliminating the need to call NodeHelper.checkFetchError().
  */
-const ERROR_TYPE_TO_TRANSLATION = {
-	AUTH_FAILURE: "MODULE_ERROR_UNAUTHORIZED",
-	ACCESS_DENIED: "MODULE_ERROR_UNAUTHORIZED",
-	RATE_LIMITED: "MODULE_ERROR_RATE_LIMITED",
-	SERVER_ERROR: "MODULE_ERROR_SERVER_ERROR",
-	CLIENT_ERROR: "MODULE_ERROR_CLIENT_ERROR",
-	NETWORK_ERROR: "MODULE_ERROR_NO_CONNECTION",
-	UNKNOWN_ERROR: "MODULE_ERROR_UNSPECIFIED"
-};
+const ERROR_TYPE_TO_TRANSLATION = new Map([
+	["AUTH_FAILURE", "MODULE_ERROR_UNAUTHORIZED"],
+	["ACCESS_DENIED", "MODULE_ERROR_UNAUTHORIZED"],
+	["RATE_LIMITED", "MODULE_ERROR_RATE_LIMITED"],
+	["SERVER_ERROR", "MODULE_ERROR_SERVER_ERROR"],
+	["CLIENT_ERROR", "MODULE_ERROR_CLIENT_ERROR"],
+	["NETWORK_ERROR", "MODULE_ERROR_NO_CONNECTION"],
+	["UNKNOWN_ERROR", "MODULE_ERROR_UNSPECIFIED"]
+]);
 
 /**
  * HTTPFetcher - Centralized HTTP fetching with intelligent error handling
@@ -302,7 +302,7 @@ class HTTPFetcher extends EventEmitter {
 			message,
 			status,
 			errorType,
-			translationKey: ERROR_TYPE_TO_TRANSLATION[errorType] || "MODULE_ERROR_UNSPECIFIED",
+			translationKey: ERROR_TYPE_TO_TRANSLATION.get(errorType) || "MODULE_ERROR_UNSPECIFIED",
 			retryAfter,
 			retryCount: errorType === "NETWORK_ERROR" ? this.networkErrorCount : this.serverErrorCount,
 			url,
