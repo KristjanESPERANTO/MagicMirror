@@ -5,11 +5,10 @@ const Log = require("logger");
 const providersDir = path.join(__dirname, "providers");
 
 module.exports = NodeHelper.create({
-	providers: {},
-	lastData: {},
-
 	start () {
 		Log.log(`Starting node helper for: ${this.name}`);
+		this.providers = new Map();
+		this.lastData = new Map();
 	},
 
 	socketNotificationReceived (notification, payload) {
@@ -33,16 +32,17 @@ module.exports = NodeHelper.create({
 
 		Log.log(`Attempting to initialize provider ${identifier} for instance ${instanceId}`);
 
-		if (this.providers[instanceId]) {
+		if (this.providers.has(instanceId)) {
+			const provider = this.providers.get(instanceId);
 			Log.log(`Weather provider ${identifier} already initialized for instance ${instanceId}, re-sending WEATHER_INITIALIZED`);
 			// Client may have restarted (e.g. page reload) - re-send so it recovers location name
 			this.sendSocketNotification("WEATHER_INITIALIZED", {
 				instanceId,
-				locationName: this.providers[instanceId].locationName
+				locationName: provider.locationName
 			});
 			// Push cached data immediately so reconnecting clients don't wait for next scheduled fetch
-			if (this.lastData[instanceId]) {
-				this.sendSocketNotification("WEATHER_DATA", this.lastData[instanceId]);
+			if (this.lastData.has(instanceId)) {
+				this.sendSocketNotification("WEATHER_DATA", this.lastData.get(instanceId));
 			}
 			return;
 		}
@@ -66,7 +66,7 @@ module.exports = NodeHelper.create({
 				(data) => {
 					// On data received
 					const payload = { instanceId, type: config.type, data };
-					this.lastData[instanceId] = payload;
+					this.lastData.set(instanceId, payload);
 					this.sendSocketNotification("WEATHER_DATA", payload);
 				},
 				(errorInfo) => {
@@ -80,7 +80,7 @@ module.exports = NodeHelper.create({
 			);
 
 			await provider.initialize();
-			this.providers[instanceId] = provider;
+			this.providers.set(instanceId, provider);
 
 			this.sendSocketNotification("WEATHER_INITIALIZED", {
 				instanceId,
@@ -105,13 +105,13 @@ module.exports = NodeHelper.create({
 	 * @param {string} instanceId The instance identifier
 	 */
 	stopWeatherProvider (instanceId) {
-		const provider = this.providers[instanceId];
+		const provider = this.providers.get(instanceId);
 
 		if (provider) {
 			Log.log(`Stopping weather provider for instance ${instanceId}`);
 			provider.stop();
-			delete this.providers[instanceId];
-			delete this.lastData[instanceId];
+			this.providers.delete(instanceId);
+			this.lastData.delete(instanceId);
 		} else {
 			Log.warn(`No provider found for instance ${instanceId}`);
 		}
