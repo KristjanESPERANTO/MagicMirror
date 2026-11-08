@@ -205,9 +205,10 @@ class App {
 	 */
 	#cmpVersions (a, b) {
 		let i, diff;
-		const regExStrip0 = /(\.0+)+$/;
-		const segmentsA = a.replace(regExStrip0, "").split(".");
-		const segmentsB = b.replace(regExStrip0, "").split(".");
+		const segmentsA = a.split(".");
+		const segmentsB = b.split(".");
+		while (segmentsA.length > 1 && segmentsA[segmentsA.length - 1] === "0") segmentsA.pop();
+		while (segmentsB.length > 1 && segmentsB[segmentsB.length - 1] === "0") segmentsB.pop();
 		const l = Math.min(segmentsA.length, segmentsB.length);
 
 		for (i = 0; i < l; i++) {

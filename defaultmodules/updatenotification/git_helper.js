@@ -107,25 +107,26 @@ class GitHelper {
 		}
 
 		// only the first line of stdout is evaluated
-		let status = stdout.split("\n")[0];
+		const statusLine = stdout.split("\n")[0];
 		// examples for status:
 		// ## develop...origin/develop
 		// ## master...origin/master [behind 8]
 		// ## master...origin/master [ahead 8, behind 1]
 		// ## HEAD (no branch)
-		status = status.match(/## (.*)\.\.\.([^ ]*)(?: .*behind (\d+))?/);
-		// examples for status:
-		// [ '## develop...origin/develop', 'develop', 'origin/develop' ]
-		// [ '## master...origin/master [behind 8]', 'master', 'origin/master', '8' ]
-		// [ '## master...origin/master [ahead 8, behind 1]', 'master', 'origin/master', '1' ]
-		if (status) {
-			gitInfo.current = status[1];
-			gitInfo.tracking = status[2];
+		const upstreamSeparator = statusLine.lastIndexOf("...");
+		if (statusLine.startsWith("## ") && upstreamSeparator !== -1) {
+			gitInfo.current = statusLine.slice(3, upstreamSeparator);
+			const upstreamStatus = statusLine.slice(upstreamSeparator + 3).trim().split(/\s+/);
+			gitInfo.tracking = upstreamStatus.shift();
 
-			if (status[3]) {
+			const statusSummary = upstreamStatus.join(" ");
+			if (statusSummary.startsWith("[") && statusSummary.endsWith("]")) {
+				const behindStatus = statusSummary.slice(1, -1).split(", ").find((status) => status.startsWith("behind "));
+				if (behindStatus) {
 				// git fetch was already called before so `git status -sb` delivers already the behind number
-				gitInfo.behind = parseInt(status[3]);
-				gitInfo.isBehindInStatus = true;
+					gitInfo.behind = parseInt(behindStatus.slice("behind ".length), 10);
+					gitInfo.isBehindInStatus = true;
+				}
 			}
 		}
 

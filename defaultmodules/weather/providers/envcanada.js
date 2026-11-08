@@ -342,11 +342,11 @@ class EnvCanadaProvider extends WeatherProvider {
 
 	#extractCityPageURL (html, indexURL) {
 		// New format: {timestamp}_MSC_CitypageWeather_{siteCode}_en.xml
-		const pattern = `[^"]*_MSC_CitypageWeather_${this.config.siteCode}_en\\.xml`;
-		const match = html.match(new RegExp(`href="(${pattern})"`));
-
-		if (match && match[1]) {
-			return indexURL + match[1];
+		const expectedSuffix = `_MSC_CitypageWeather_${this.config.siteCode}_en.xml`;
+		for (const match of html.matchAll(/href="([^"]+)"/g)) {
+			if (match[1].endsWith(expectedSuffix)) {
+				return indexURL + match[1];
+			}
 		}
 
 		return null;
