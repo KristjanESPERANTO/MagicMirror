@@ -118,12 +118,12 @@ class WeatherObject {
 	 * @returns {object} plained object clone of original weatherObject
 	 */
 	simpleClone () {
-		const toFlat = ["date", "sunrise", "sunset"];
-		const clone = { ...this };
-		for (const prop of toFlat) {
-			clone[prop] = clone?.[prop]?.valueOf() ?? clone?.[prop];
-		}
-		return clone;
+		return {
+			...this,
+			date: this.date?.valueOf() ?? this.date,
+			sunrise: this.sunrise?.valueOf() ?? this.sunrise,
+			sunset: this.sunset?.valueOf() ?? this.sunset
+		};
 	}
 }
 

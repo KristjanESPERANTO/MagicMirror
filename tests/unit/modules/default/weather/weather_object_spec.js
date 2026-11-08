@@ -44,6 +44,26 @@ describe("WeatherObject", () => {
 		expect(weatherobject.feelsLike()).toBe("feelsLikeTempValue");
 	});
 
+	it("should clone date values as timestamps", () => {
+		const date = moment("2026-11-04T12:00:00");
+		const sunrise = moment("2026-11-04T06:00:00");
+		const sunset = moment("2026-11-04T18:00:00");
+		weatherobject.date = date;
+		weatherobject.sunrise = sunrise;
+		weatherobject.sunset = sunset;
+		weatherobject.temperature = 12;
+
+		const clone = weatherobject.simpleClone();
+
+		expect(clone).toMatchObject({
+			date: date.valueOf(),
+			sunrise: sunrise.valueOf(),
+			sunset: sunset.valueOf(),
+			temperature: 12
+		});
+		expect(weatherobject.date).toBe(date);
+	});
+
 	afterAll(() => {
 		moment.tz.setDefault(originalTimeZone);
 	});
