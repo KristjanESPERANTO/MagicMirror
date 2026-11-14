@@ -188,6 +188,31 @@ const CalendarUtils = {
 	},
 
 	/**
+	 * Builds the time cell text for `timeFormat: "dateheaders"`.
+	 * @param {object} event The calendar event.
+	 * @param {moment.Moment} eventStartDateMoment The event start.
+	 * @param {moment.Moment} eventEndDateMoment The event end.
+	 * @param {object} config The calendar module config.
+	 * @returns {string|null} The time text, or null when the event needs no time cell.
+	 */
+	buildDateHeadersTimeText (event, eventStartDateMoment, eventEndDateMoment, config) {
+		if (event.fullDayEvent) {
+			const adjustedEndMoment = CalendarUtils.getAdjustedFullDayEndMoment(eventEndDateMoment);
+			if (config.showEnd && !config.showEndsOnlyWithDuration && !eventStartDateMoment.isSame(adjustedEndMoment, "d")) {
+				return `-${CalendarUtils.capFirst(adjustedEndMoment.format(config.fullDayEventDateFormat))}`;
+			}
+			return null;
+		}
+
+		let timeText = eventStartDateMoment.format("LT");
+		// Time-only end avoids redundant date info under a date header.
+		if (config.showEnd && (!config.showEndsOnlyWithDuration || CalendarUtils.hasEventDuration(event))) {
+			timeText += `-${CalendarUtils.capFirst(eventEndDateMoment.format("LT"))}`;
+		}
+		return timeText;
+	},
+
+	/**
 	 * Builds the time text for `timeFormat: "absolute"`.
 	 * @param {object} event The calendar event.
 	 * @param {moment.Moment} eventStartDateMoment The event start.

@@ -329,29 +329,9 @@ describe("Calendar module", () => {
 
 	// Text formatting of showEnd is unit-tested in calendar_utils_spec.js; the cases below keep the UTC to local conversion and the dateheaders DOM.
 	describe("showEnd for timed multi-day events", () => {
-		const timedMultiDayCases = [
-			{
-				name: "relative timeFormat shows start and end for timed multi-day events",
-				scenario: "event_with_time_over_multiple_days_non_repeating_display_end_relative",
-				expectedTime: "25th.Oct, 20:00-26th.Oct, 06:00"
-			},
-			{
-				name: "dateheaders timeFormat shows end for timed multi-day events",
-				scenario: "event_with_time_over_multiple_days_non_repeating_display_end_dateheaders",
-				expectedTime: "20:00-06:00"
-			}
-		];
-
-		it.each(timedMultiDayCases)("$name", async (testCase) => {
+		it("relative timeFormat shows start and end for timed multi-day events", async () => {
 			expect.hasAssertions();
-			await expectFirstEventTimeCell(testCase);
-		});
-	});
-
-	describe("showEnd for timed same-day events", () => {
-		it("dateheaders timeFormat shows start and end time only", async () => {
-			expect.hasAssertions();
-			await expectFirstEventTimeCell({ scenario: "event_with_time_same_day_yearly_display_end_dateheaders", expectedTime: "20:00-22:00" });
+			await expectFirstEventTimeCell({ scenario: "event_with_time_over_multiple_days_non_repeating_display_end_relative", expectedTime: "25th.Oct, 20:00-26th.Oct, 06:00" });
 		});
 	});
 

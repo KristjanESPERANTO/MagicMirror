@@ -688,33 +688,16 @@ Module.register("calendar", {
 		return timeWrapper;
 	},
 
-	shouldShowDateHeadersTimedEnd (event) {
-		return this.config.showEnd && (!this.config.showEndsOnlyWithDuration || CalendarUtils.hasEventDuration(event));
-	},
-
 	renderDateHeadersEventTime (eventWrapper, titleWrapper, event, eventStartDateMoment, eventEndDateMoment) {
 		if (this.config.flipDateHeaderTitle) eventWrapper.appendChild(titleWrapper);
 
-		if (event.fullDayEvent) {
-			const adjustedEndMoment = CalendarUtils.getAdjustedFullDayEndMoment(eventEndDateMoment);
-			if (this.config.showEnd && !this.config.showEndsOnlyWithDuration && !eventStartDateMoment.isSame(adjustedEndMoment, "d")) {
-				const timeWrapper = this.createDateHeadersTimeWrapper(event.url);
-				timeWrapper.innerHTML = `-${CalendarUtils.capFirst(adjustedEndMoment.format(this.config.fullDayEventDateFormat))}`;
-				eventWrapper.appendChild(timeWrapper);
-				if (!this.config.flipDateHeaderTitle) titleWrapper.classList.add("align-right");
-			} else {
-				titleWrapper.colSpan = "2";
-				titleWrapper.classList.add("align-left");
-			}
+		const timeText = CalendarUtils.buildDateHeadersTimeText(event, eventStartDateMoment, eventEndDateMoment, this.config);
+		if (timeText === null) {
+			titleWrapper.colSpan = "2";
+			titleWrapper.classList.add("align-left");
 		} else {
 			const timeWrapper = this.createDateHeadersTimeWrapper(event.url);
-			timeWrapper.innerHTML = eventStartDateMoment.format("LT");
-
-			// In dateheaders mode, keep the end as time-only to avoid redundant date info under a date header.
-			if (this.shouldShowDateHeadersTimedEnd(event)) {
-				timeWrapper.innerHTML += `-${CalendarUtils.capFirst(eventEndDateMoment.format("LT"))}`;
-			}
-
+			timeWrapper.innerHTML = timeText;
 			eventWrapper.appendChild(timeWrapper);
 			if (!this.config.flipDateHeaderTitle) titleWrapper.classList.add("align-right");
 		}
