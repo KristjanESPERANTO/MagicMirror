@@ -20,7 +20,10 @@
  * @property {moment.Moment} [now] The current moment (not needed for dateheaders).
  * @property {object} config The calendar module config.
  * @property {(key: string, variables?: object) => string} [translate] The module translate function (not needed for dateheaders).
+ * @property {{debug: (message: string) => void, info: (message: string) => void}} [log] Logger for branch diagnostics, silent when omitted.
  */
+
+const silentLog = { debug () {}, info () {} };
 
 const CalendarUtils = {
 
@@ -185,14 +188,14 @@ const CalendarUtils = {
 	/**
 	 * Checks whether the given dateFormat already contains time components.
 	 * @param {string} dateFormat The moment.js date format.
+	 * @param {moment.Locale} localeData The locale used to expand tokens like `LT` or `lll`.
 	 * @returns {boolean} True when dateFormat includes time tokens.
 	 */
-	dateFormatIncludesTime (dateFormat) {
+	dateFormatIncludesTime (dateFormat, localeData) {
 		const dateFormatWithoutLiterals = dateFormat.replace(/\[[^\]]*\]/g, "");
-		const localeDateFormat = globalThis.moment.localeData();
 		const expandedDateFormat = dateFormatWithoutLiterals.replace(
 			/LTS|LT|LLLL|LLL|LL|L|llll|lll|ll|l/g,
-			(token) => localeDateFormat.longDateFormat(token) || token
+			(token) => localeData.longDateFormat(token) || token
 		);
 		const expandedDateFormatWithoutLiterals = expandedDateFormat.replace(/\[[^\]]*\]/g, "");
 		return (/(H{1,2}|h{1,2}|k{1,2}|m{1,2}|s{1,2}|a|A)/).test(expandedDateFormatWithoutLiterals);
@@ -245,7 +248,7 @@ const CalendarUtils = {
 
 		if (config.showEnd && (!config.showEndsOnlyWithDuration || CalendarUtils.hasEventDuration(event))) {
 			const sameDay = CalendarUtils.isSameDay(eventStartDateMoment, eventEndDateMoment);
-			if (sameDay && !CalendarUtils.dateFormatIncludesTime(config.dateFormat)) {
+			if (sameDay && !CalendarUtils.dateFormatIncludesTime(config.dateFormat, eventStartDateMoment.localeData())) {
 				timeText += `, ${eventStartDateMoment.format("LT")}`;
 			}
 			timeText += `-${CalendarUtils.formatTimedEventEnd(eventStartDateMoment, eventEndDateMoment, config.dateEndFormat)}`;
@@ -307,15 +310,15 @@ const CalendarUtils = {
 	 * @returns {string} The time text.
 	 */
 	buildRelativeTimeText (context) {
-		const { event, start: eventStartDateMoment, end: eventEndDateMoment, now, config, translate } = context;
+		const { event, start: eventStartDateMoment, end: eventEndDateMoment, now, config, translate, log = silentLog } = context;
 		if (eventStartDateMoment.isSameOrAfter(now) || (event.fullDayEvent && eventEndDateMoment.diff(now, "days") === 0)) {
 			let timeText;
 
 			if (!config.hideTime && !event.fullDayEvent) {
-				Log.debug("[calendar] event not hidden and not fullday");
+				log.debug("[calendar] event not hidden and not fullday");
 				timeText = `${CalendarUtils.capFirst(eventStartDateMoment.calendar(null, { sameElse: config.dateFormat }))}`;
 			} else {
-				Log.debug("[calendar] event full day or hidden");
+				log.debug("[calendar] event full day or hidden");
 				timeText = `${CalendarUtils.capFirst(
 					eventStartDateMoment.calendar(null, {
 						sameDay: config.showTimeToday ? "LT" : `[${translate("TODAY")}]`,
@@ -350,13 +353,13 @@ const CalendarUtils = {
 					}
 				}
 
-				Log.info("[calendar] event fullday");
+				log.info("[calendar] event fullday");
 			} else if (eventStartDateMoment.diff(now, "h") < config.getRelative) {
-				Log.info("[calendar] not full day but within getRelative size");
+				log.info("[calendar] not full day but within getRelative size");
 				timeText = `${CalendarUtils.capFirst(eventStartDateMoment.fromNow())}`;
 			} else if (!config.hideTime && config.showEnd && (!config.showEndsOnlyWithDuration || CalendarUtils.hasEventDuration(event))) {
 				if (CalendarUtils.isSameDay(eventStartDateMoment, eventEndDateMoment)) {
-					const sameElseFormat = CalendarUtils.dateFormatIncludesTime(config.dateFormat) ? config.dateFormat : `${config.dateFormat}, LT`;
+					const sameElseFormat = CalendarUtils.dateFormatIncludesTime(config.dateFormat, eventStartDateMoment.localeData()) ? config.dateFormat : `${config.dateFormat}, LT`;
 					timeText = CalendarUtils.capFirst(
 						eventStartDateMoment.calendar(null, { sameElse: sameElseFormat })
 					);

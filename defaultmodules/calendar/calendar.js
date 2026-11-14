@@ -389,7 +389,7 @@ Module.register("calendar", {
 				const timeWrapper = document.createElement("td");
 
 				eventWrapper.appendChild(titleWrapper);
-				const timeContext = { event, start: eventStartDateMoment, end: eventEndDateMoment, now: moment(), config: this.config, translate: this.translate.bind(this) };
+				const timeContext = { event, start: eventStartDateMoment, end: eventEndDateMoment, now: moment(), config: this.config, translate: this.translate.bind(this), log: Log };
 
 				if (this.config.timeFormat === "absolute") {
 					timeWrapper.innerHTML = CalendarUtils.buildAbsoluteTimeText(timeContext);
