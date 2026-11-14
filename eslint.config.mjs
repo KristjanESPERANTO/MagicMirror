@@ -85,7 +85,18 @@ export default defineConfig([
 			"prefer-arrow-callback": "error",
 			"prefer-const": "error",
 			"prefer-template": "error",
-			"require-await": "error"
+			"require-await": "error",
+			"jsdoc/require-jsdoc": ["warn", {require: {MethodDefinition: true}}]
+		}
+	},
+	{
+		files: ["defaultmodules/calendar/calendarutils.mjs"],
+		rules: {
+			"jsdoc/require-jsdoc": [
+				"warn", {require: {FunctionDeclaration: true,
+					FunctionExpression: true,
+					MethodDefinition: true}}
+			]
 		}
 	},
 	{
