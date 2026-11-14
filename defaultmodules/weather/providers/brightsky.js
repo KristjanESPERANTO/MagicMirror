@@ -157,7 +157,7 @@ class BrightSkyProvider extends WeatherProvider {
 			humidity: record.relative_humidity,
 			windSpeed: this.#toMs(record.wind_speed_60 ?? record.wind_speed_10),
 			windFromDirection: record.wind_direction_60 ?? record.wind_direction_10,
-			weatherType: this.#convertWeatherType(record.icon, isDayTime(date, sunrise, sunset)),
+			weatherType: this.#convertWeatherType(record.icon, isDayTime(date, sunrise, sunset, this.config.lat, this.config.lon)),
 			precipitationAmount: precipitation,
 			precipitationUnits: precipitation != null ? "mm" : null
 		};
@@ -179,7 +179,7 @@ class BrightSkyProvider extends WeatherProvider {
 					humidity: record.relative_humidity,
 					windSpeed: this.#toMs(record.wind_speed),
 					windFromDirection: record.wind_direction,
-					weatherType: this.#convertWeatherType(record.icon, isDayTime(date, sunrise, sunset)),
+					weatherType: this.#convertWeatherType(record.icon, isDayTime(date, sunrise, sunset, this.config.lat, this.config.lon)),
 					precipitationAmount: record.precipitation,
 					precipitationUnits: record.precipitation != null ? "mm" : null,
 					precipitationProbability: record.precipitation_probability
@@ -219,8 +219,10 @@ class BrightSkyProvider extends WeatherProvider {
 
 		const [year, month, day] = key.split("-").map(Number);
 		const date = new Date(year, month - 1, day);
-		const { sunrise, sunset } = getSunTimes(new Date(year, month - 1, day, 12), this.config.lat, this.config.lon);
-		const daytimeRecords = records.filter((record) => isDayTime(new Date(record.timestamp), sunrise, sunset));
+		const noon = new Date(year, month - 1, day, 12);
+		const { sunrise, sunset } = getSunTimes(noon, this.config.lat, this.config.lon);
+		const daytimeRecords = records.filter((record) => isDayTime(new Date(record.timestamp), sunrise, sunset, this.config.lat, this.config.lon));
+		const dayTime = isDayTime(noon, sunrise, sunset, this.config.lat, this.config.lon);
 		const precipitation = this.#sum(records, "precipitation");
 		const probabilities = records.map((record) => record.precipitation_probability).filter(Number.isFinite);
 		const windSpeeds = records.map((record) => record.wind_speed).filter(Number.isFinite);
@@ -232,7 +234,7 @@ class BrightSkyProvider extends WeatherProvider {
 			minTemperature: Math.min(...temperatures),
 			maxTemperature: Math.max(...temperatures),
 			temperature: (Math.min(...temperatures) + Math.max(...temperatures)) / 2,
-			weatherType: this.#convertWeatherType(this.#mostFrequentIcon(daytimeRecords.length > 0 ? daytimeRecords : records), true),
+			weatherType: this.#convertWeatherType(this.#mostFrequentIcon(daytimeRecords.length > 0 ? daytimeRecords : records), dayTime),
 			windSpeed: windSpeeds.length > 0 ? this.#toMs(Math.max(...windSpeeds)) : null,
 			precipitationAmount: precipitation,
 			precipitationUnits: precipitation != null ? "mm" : null,

@@ -267,6 +267,18 @@ describe("BrightSkyProvider", () => {
 
 			expect(result[0].weatherType).toBe("day-rain");
 		});
+
+		it("should use a night icon during polar night", async () => {
+			vi.useFakeTimers({ toFake: ["Date"] });
+			vi.setSystemTime(new Date("2026-12-21T11:00:00Z"));
+
+			mockApi({ weather: buildRecords(new Date("2026-12-21T00:00:00Z"), 24, () => ({ icon: "rain" })) });
+			const provider = new BrightSkyProvider({ lat: 69.65, lon: 18.96, type: "forecast", maxNumberOfDays: 1 });
+			const result = await fetchOnce(provider);
+
+			expect(result).toHaveLength(1);
+			expect(result[0].weatherType).toBe("night-alt-rain");
+		});
 	});
 
 	describe("Real API responses", () => {
