@@ -37,8 +37,7 @@ const loadWeatherNodeHelper = async () => {
 		Module.prototype.require = originalRequire;
 	}
 
-	helper.providers = {};
-	helper.lastData = {};
+	helper.start();
 	helper.sendSocketNotification = vi.fn();
 
 	return helper;
@@ -59,8 +58,8 @@ describe("weather node_helper reconnect handling", () => {
 			data: { temperature: 8.5 }
 		};
 
-		helper.providers[instanceId] = { locationName: "Munich, BY" };
-		helper.lastData[instanceId] = cachedPayload;
+		helper.providers.set(instanceId, { locationName: "Munich, BY" });
+		helper.lastData.set(instanceId, cachedPayload);
 
 		await helper.initWeatherProvider({
 			weatherProvider: "openmeteo",
@@ -80,7 +79,7 @@ describe("weather node_helper reconnect handling", () => {
 		const helper = await loadWeatherNodeHelper();
 		const instanceId = "weather-current";
 
-		helper.providers[instanceId] = { locationName: "Munich, BY" };
+		helper.providers.set(instanceId, { locationName: "Munich, BY" });
 
 		await helper.initWeatherProvider({
 			weatherProvider: "openmeteo",
@@ -115,17 +114,34 @@ describe("weather node_helper reconnect handling", () => {
 		const instanceId = "weather-current";
 		const stop = vi.fn();
 
-		helper.providers[instanceId] = { stop };
-		helper.lastData[instanceId] = {
+		helper.providers.set(instanceId, { stop });
+		helper.lastData.set(instanceId, {
 			instanceId,
 			type: "current",
 			data: { temperature: 8.5 }
-		};
+		});
 
 		helper.stopWeatherProvider(instanceId);
 
 		expect(stop).toHaveBeenCalledTimes(1);
-		expect(helper.providers[instanceId]).toBeUndefined();
-		expect(helper.lastData[instanceId]).toBeUndefined();
+		expect(helper.providers.has(instanceId)).toBe(false);
+		expect(helper.lastData.has(instanceId)).toBe(false);
+	});
+
+	it("handles special instance IDs without prototype-key collisions", async () => {
+		const helper = await loadWeatherNodeHelper();
+		const instanceId = "__proto__";
+		const cachedPayload = { instanceId, type: "current", data: { temperature: 8.5 } };
+
+		helper.providers.set(instanceId, { locationName: "Munich, BY" });
+		helper.lastData.set(instanceId, cachedPayload);
+
+		await helper.initWeatherProvider({ weatherProvider: "openmeteo", instanceId, type: "current" });
+
+		expect(helper.sendSocketNotification).toHaveBeenNthCalledWith(1, "WEATHER_INITIALIZED", {
+			instanceId,
+			locationName: "Munich, BY"
+		});
+		expect(helper.sendSocketNotification).toHaveBeenNthCalledWith(2, "WEATHER_DATA", cachedPayload);
 	});
 });
