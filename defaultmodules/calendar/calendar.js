@@ -109,6 +109,7 @@ Module.register("calendar", {
 
 		// clear data holder before start
 		this.calendarData = {};
+		this.calendarErrors = {};
 
 		// indicate no data available yet
 		this.loaded = false;
@@ -189,7 +190,7 @@ Module.register("calendar", {
 			// save the event list
 			this.calendarData[payload.url].events = payload.events;
 
-			this.error = null;
+			delete this.calendarErrors[payload.url];
 			this.loaded = true;
 
 			if (this.config.broadcastEvents) {
@@ -216,7 +217,7 @@ Module.register("calendar", {
 			}
 		} else if (notification === "CALENDAR_ERROR") {
 			const error_message = this.translate(payload.error_type);
-			this.error = this.translate("MODULE_CONFIG_ERROR", { MODULE_NAME: this.name, ERROR: error_message });
+			this.calendarErrors[payload.url] = this.translate("MODULE_CONFIG_ERROR", { MODULE_NAME: this.name, ERROR: error_message });
 			this.loaded = true;
 		}
 
@@ -228,14 +229,9 @@ Module.register("calendar", {
 		const events = this.createEventList(true);
 		const wrapper = document.createElement("table");
 		wrapper.className = this.config.tableClass;
+		const errors = new Set(Object.values(this.calendarErrors));
 
-		if (this.error) {
-			wrapper.innerHTML = this.error;
-			wrapper.className = `${this.config.tableClass} dimmed`;
-			return wrapper;
-		}
-
-		if (events.length === 0) {
+		if (events.length === 0 && errors.size === 0) {
 			wrapper.innerHTML = this.loaded ? this.translate("EMPTY") : this.translate("LOADING");
 			wrapper.className = `${this.config.tableClass} dimmed`;
 			return wrapper;
@@ -452,6 +448,17 @@ Module.register("calendar", {
 				}
 			}
 		});
+
+		// show failing calendars below the events, so a broken feed is noticed without hiding the working ones
+		for (const error of errors) {
+			const errorRow = document.createElement("tr");
+			errorRow.className = "normal dimmed";
+			const errorCell = document.createElement("td");
+			errorCell.colSpan = "3";
+			errorCell.innerHTML = error;
+			errorRow.appendChild(errorCell);
+			wrapper.appendChild(errorRow);
+		}
 
 		return wrapper;
 	},
