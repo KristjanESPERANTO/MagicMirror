@@ -389,12 +389,12 @@ Module.register("calendar", {
 				const timeWrapper = document.createElement("td");
 
 				eventWrapper.appendChild(titleWrapper);
-				const now = moment();
+				const timeContext = { event, start: eventStartDateMoment, end: eventEndDateMoment, now: moment(), config: this.config, translate: this.translate.bind(this) };
 
 				if (this.config.timeFormat === "absolute") {
-					timeWrapper.innerHTML = CalendarUtils.buildAbsoluteTimeText(event, eventStartDateMoment, eventEndDateMoment, now, this.config, this.translate.bind(this));
+					timeWrapper.innerHTML = CalendarUtils.buildAbsoluteTimeText(timeContext);
 				} else {
-					timeWrapper.innerHTML = CalendarUtils.buildRelativeTimeText(event, eventStartDateMoment, eventEndDateMoment, now, this.config, this.translate.bind(this));
+					timeWrapper.innerHTML = CalendarUtils.buildRelativeTimeText(timeContext);
 				}
 
 				timeWrapper.className = `time light ${this.timeClassForUrl(event.url)}`;
@@ -691,7 +691,7 @@ Module.register("calendar", {
 	renderDateHeadersEventTime (eventWrapper, titleWrapper, event, eventStartDateMoment, eventEndDateMoment) {
 		if (this.config.flipDateHeaderTitle) eventWrapper.appendChild(titleWrapper);
 
-		const timeText = CalendarUtils.buildDateHeadersTimeText(event, eventStartDateMoment, eventEndDateMoment, this.config);
+		const timeText = CalendarUtils.buildDateHeadersTimeText({ event, start: eventStartDateMoment, end: eventEndDateMoment, config: this.config });
 		if (timeText === null) {
 			titleWrapper.colSpan = "2";
 			titleWrapper.classList.add("align-left");

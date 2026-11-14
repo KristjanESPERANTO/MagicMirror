@@ -1,3 +1,27 @@
+/**
+ * An event as delivered by the calendar fetcher, plus the relative day flags set by the module.
+ * @typedef {object} CalendarEvent
+ * @property {string} startDate Start as epoch milliseconds.
+ * @property {string} endDate End as epoch milliseconds.
+ * @property {boolean} fullDayEvent True for all-day events.
+ * @property {boolean} [today] Event starts today.
+ * @property {boolean} [dayBeforeYesterday] Event starts the day before yesterday.
+ * @property {boolean} [yesterday] Event starts yesterday.
+ * @property {boolean} [tomorrow] Event starts tomorrow.
+ * @property {boolean} [dayAfterTomorrow] Event starts the day after tomorrow.
+ */
+
+/**
+ * Everything needed to build the time text of one event.
+ * @typedef {object} TimeTextContext
+ * @property {CalendarEvent} event The calendar event.
+ * @property {moment.Moment} start The event start.
+ * @property {moment.Moment} end The event end.
+ * @property {moment.Moment} [now] The current moment (not needed for dateheaders).
+ * @property {object} config The calendar module config.
+ * @property {(key: string, variables?: object) => string} [translate] The module translate function (not needed for dateheaders).
+ */
+
 const CalendarUtils = {
 
 	/**
@@ -189,13 +213,11 @@ const CalendarUtils = {
 
 	/**
 	 * Builds the time cell text for `timeFormat: "dateheaders"`.
-	 * @param {object} event The calendar event.
-	 * @param {moment.Moment} eventStartDateMoment The event start.
-	 * @param {moment.Moment} eventEndDateMoment The event end.
-	 * @param {object} config The calendar module config.
+	 * @param {TimeTextContext} context The event and its rendering context.
 	 * @returns {string|null} The time text, or null when the event needs no time cell.
 	 */
-	buildDateHeadersTimeText (event, eventStartDateMoment, eventEndDateMoment, config) {
+	buildDateHeadersTimeText (context) {
+		const { event, start: eventStartDateMoment, end: eventEndDateMoment, config } = context;
 		if (event.fullDayEvent) {
 			const adjustedEndMoment = CalendarUtils.getAdjustedFullDayEndMoment(eventEndDateMoment);
 			if (config.showEnd && !config.showEndsOnlyWithDuration && !eventStartDateMoment.isSame(adjustedEndMoment, "d")) {
@@ -214,15 +236,11 @@ const CalendarUtils = {
 
 	/**
 	 * Builds the time text for `timeFormat: "absolute"`.
-	 * @param {object} event The calendar event.
-	 * @param {moment.Moment} eventStartDateMoment The event start.
-	 * @param {moment.Moment} eventEndDateMoment The event end.
-	 * @param {moment.Moment} now The current moment.
-	 * @param {object} config The calendar module config.
-	 * @param {(key: string, variables?: object) => string} translate The module translate function.
+	 * @param {TimeTextContext} context The event and its rendering context.
 	 * @returns {string} The time text.
 	 */
-	buildAbsoluteTimeText (event, eventStartDateMoment, eventEndDateMoment, now, config, translate) {
+	buildAbsoluteTimeText (context) {
+		const { event, start: eventStartDateMoment, end: eventEndDateMoment, now, config, translate } = context;
 		let timeText = CalendarUtils.capFirst(eventStartDateMoment.format(config.dateFormat));
 
 		if (config.showEnd && (!config.showEndsOnlyWithDuration || CalendarUtils.hasEventDuration(event))) {
@@ -285,15 +303,11 @@ const CalendarUtils = {
 
 	/**
 	 * Builds the time text for `timeFormat: "relative"`.
-	 * @param {object} event The calendar event.
-	 * @param {moment.Moment} eventStartDateMoment The event start.
-	 * @param {moment.Moment} eventEndDateMoment The event end.
-	 * @param {moment.Moment} now The current moment.
-	 * @param {object} config The calendar module config.
-	 * @param {(key: string, variables?: object) => string} translate The module translate function.
+	 * @param {TimeTextContext} context The event and its rendering context.
 	 * @returns {string} The time text.
 	 */
-	buildRelativeTimeText (event, eventStartDateMoment, eventEndDateMoment, now, config, translate) {
+	buildRelativeTimeText (context) {
+		const { event, start: eventStartDateMoment, end: eventEndDateMoment, now, config, translate } = context;
 		if (eventStartDateMoment.isSameOrAfter(now) || (event.fullDayEvent && eventEndDateMoment.diff(now, "days") === 0)) {
 			let timeText;
 
