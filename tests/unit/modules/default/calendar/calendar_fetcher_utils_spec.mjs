@@ -1,8 +1,6 @@
 import moment from "moment-timezone";
 import { CalendarFetcherUtils } from "../../../../../defaultmodules/calendar/calendarfetcherutils.js";
 
-globalThis.moment = moment;
-
 describe("Calendar fetcher utils test", () => {
 	const defaultConfig = {
 		excludedEvents: []
