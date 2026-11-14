@@ -95,7 +95,7 @@ const waitForPort = async (port, maxAttempts = PORT_CHECK_MAX_ATTEMPTS) => {
  */
 const startServer = () => {
 	// Start node directly instead of via npm to avoid process tree issues
-	child = spawn("node", ["./serveronly"], {
+	child = spawn("node", ["./serveronly/index.mjs"], {
 		stdio: "inherit",
 		cwd: rootDir
 	});
