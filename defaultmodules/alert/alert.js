@@ -117,10 +117,13 @@ Module.register("alert", {
 	},
 
 	toggleBlur (add = false) {
-		const method = add ? "add" : "remove";
 		const modules = document.querySelectorAll(".module");
 		for (const module of modules) {
-			module.classList[method]("alert-blur");
+			if (add) {
+				module.classList.add("alert-blur");
+			} else {
+				module.classList.remove("alert-blur");
+			}
 		}
 	}
 });
