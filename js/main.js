@@ -316,7 +316,7 @@ const _hideModule = (module, speed, callback, options = {}) => {
 			}, speed);
 		}
 	} else {
-		// invoke callback even if no content, issue 1308
+		// invoke callback even if there is no content to keep hide flow consistent (see #1308)
 		if (typeof callback === "function") {
 			callback();
 		}
