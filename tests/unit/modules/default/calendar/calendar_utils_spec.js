@@ -223,6 +223,42 @@ describe("Calendar utils tests", () => {
 			});
 		});
 
+		describe("buildDateHeadersTimeText", () => {
+			it("shows start time only without showEnd", () => {
+				const start = now.clone();
+				const end = start.clone().add(2, "hours");
+				expect(CalendarUtils.buildDateHeadersTimeText(makeEvent(start, end), start, end, baseConfig)).toBe(start.format("LT"));
+			});
+
+			it("appends a time-only end with showEnd", () => {
+				const start = now.clone();
+				const end = start.clone().add(2, "hours");
+				expect(CalendarUtils.buildDateHeadersTimeText(makeEvent(start, end), start, end, { ...baseConfig, showEnd: true })).toBe(`${start.format("LT")}-${end.format("LT")}`);
+			});
+
+			it("omits the end without duration when showEndsOnlyWithDuration is set", () => {
+				const start = now.clone();
+				const config = { ...baseConfig, showEnd: true, showEndsOnlyWithDuration: true };
+				expect(CalendarUtils.buildDateHeadersTimeText(makeEvent(start, start), start, start, config)).toBe(start.format("LT"));
+			});
+
+			it("returns the end date for multi-day full-day events with showEnd", () => {
+				const start = now.clone().startOf("day");
+				const end = start.clone().add(3, "days");
+				const event = makeEvent(start, end, { fullDayEvent: true });
+				expect(CalendarUtils.buildDateHeadersTimeText(event, start, end, { ...baseConfig, showEnd: true })).toBe("-Jan 3rd");
+			});
+
+			it("returns null for single-day full-day events and without showEnd", () => {
+				const start = now.clone().startOf("day");
+				const singleDay = makeEvent(start, start.clone().add(1, "day"), { fullDayEvent: true });
+				expect(CalendarUtils.buildDateHeadersTimeText(singleDay, start, start.clone().add(1, "day"), { ...baseConfig, showEnd: true })).toBeNull();
+
+				const multiDay = makeEvent(start, start.clone().add(3, "days"), { fullDayEvent: true });
+				expect(CalendarUtils.buildDateHeadersTimeText(multiDay, start, start.clone().add(3, "days"), baseConfig)).toBeNull();
+			});
+		});
+
 		describe("buildRelativeTimeText", () => {
 			it("shows 'Running' for ongoing events", () => {
 				const start = now.clone().subtract(1, "hour");

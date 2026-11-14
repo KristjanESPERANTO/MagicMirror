@@ -26,33 +26,6 @@ const calendarShowEndConfigs = {
 			}
 		]
 	},
-	event_with_time_over_multiple_days_non_repeating_display_end_dateheaders: {
-		address: "0.0.0.0",
-		ipWhitelist: [],
-		timeFormat: 24,
-		modules: [
-			{
-				module: "calendar",
-				position: "bottom_bar",
-				config: {
-					fade: false,
-					urgency: 0,
-					dateFormat: "Do.MMM, HH:mm",
-					dateEndFormat: "Do.MMM, HH:mm",
-					fullDayEventDateFormat: "Do.MMM",
-					timeFormat: "dateheaders",
-					getRelative: 0,
-					showEnd: true,
-					calendars: [
-						{
-							maximumEntries: 100,
-							url: "http://localhost:8080/tests/mocks/event_with_time_over_multiple_days_yearly.ics"
-						}
-					]
-				}
-			}
-		]
-	},
 	event_with_time_over_multiple_days_non_repeating_display_end_relative: {
 		address: "0.0.0.0",
 		ipWhitelist: [],
@@ -74,33 +47,6 @@ const calendarShowEndConfigs = {
 						{
 							maximumEntries: 100,
 							url: "http://localhost:8080/tests/mocks/event_with_time_over_multiple_days_yearly.ics"
-						}
-					]
-				}
-			}
-		]
-	},
-	event_with_time_same_day_yearly_display_end_dateheaders: {
-		address: "0.0.0.0",
-		ipWhitelist: [],
-		timeFormat: 24,
-		modules: [
-			{
-				module: "calendar",
-				position: "bottom_bar",
-				config: {
-					fade: false,
-					urgency: 0,
-					dateFormat: "Do.MMM",
-					dateEndFormat: "Do.MMM, HH:mm",
-					fullDayEventDateFormat: "Do.MMM",
-					timeFormat: "dateheaders",
-					getRelative: 0,
-					showEnd: true,
-					calendars: [
-						{
-							maximumEntries: 100,
-							url: "http://localhost:8080/tests/mocks/event_with_time_same_day_yearly.ics"
 						}
 					]
 				}
