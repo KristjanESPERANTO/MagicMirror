@@ -227,35 +227,35 @@ describe("Calendar utils tests", () => {
 			it("shows start time only without showEnd", () => {
 				const start = now.clone();
 				const end = start.clone().add(2, "hours");
-				expect(CalendarUtils.buildDateHeadersTimeText(makeEvent(start, end), start, end, baseConfig)).toBe(start.format("LT"));
+				expect(CalendarUtils.buildDateHeadersTimeText({ event: makeEvent(start, end), start, end, config: baseConfig })).toBe(start.format("LT"));
 			});
 
 			it("appends a time-only end with showEnd", () => {
 				const start = now.clone();
 				const end = start.clone().add(2, "hours");
-				expect(CalendarUtils.buildDateHeadersTimeText(makeEvent(start, end), start, end, { ...baseConfig, showEnd: true })).toBe(`${start.format("LT")}-${end.format("LT")}`);
+				expect(CalendarUtils.buildDateHeadersTimeText({ event: makeEvent(start, end), start, end, config: { ...baseConfig, showEnd: true } })).toBe(`${start.format("LT")}-${end.format("LT")}`);
 			});
 
 			it("omits the end without duration when showEndsOnlyWithDuration is set", () => {
 				const start = now.clone();
 				const config = { ...baseConfig, showEnd: true, showEndsOnlyWithDuration: true };
-				expect(CalendarUtils.buildDateHeadersTimeText(makeEvent(start, start), start, start, config)).toBe(start.format("LT"));
+				expect(CalendarUtils.buildDateHeadersTimeText({ event: makeEvent(start, start), start, end: start, config })).toBe(start.format("LT"));
 			});
 
 			it("returns the end date for multi-day full-day events with showEnd", () => {
 				const start = now.clone().startOf("day");
 				const end = start.clone().add(3, "days");
 				const event = makeEvent(start, end, { fullDayEvent: true });
-				expect(CalendarUtils.buildDateHeadersTimeText(event, start, end, { ...baseConfig, showEnd: true })).toBe("-Jan 3rd");
+				expect(CalendarUtils.buildDateHeadersTimeText({ event, start, end, config: { ...baseConfig, showEnd: true } })).toBe("-Jan 3rd");
 			});
 
 			it("returns null for single-day full-day events and without showEnd", () => {
 				const start = now.clone().startOf("day");
 				const singleDay = makeEvent(start, start.clone().add(1, "day"), { fullDayEvent: true });
-				expect(CalendarUtils.buildDateHeadersTimeText(singleDay, start, start.clone().add(1, "day"), { ...baseConfig, showEnd: true })).toBeNull();
+				expect(CalendarUtils.buildDateHeadersTimeText({ event: singleDay, start, end: start.clone().add(1, "day"), config: { ...baseConfig, showEnd: true } })).toBeNull();
 
 				const multiDay = makeEvent(start, start.clone().add(3, "days"), { fullDayEvent: true });
-				expect(CalendarUtils.buildDateHeadersTimeText(multiDay, start, start.clone().add(3, "days"), baseConfig)).toBeNull();
+				expect(CalendarUtils.buildDateHeadersTimeText({ event: multiDay, start, end: start.clone().add(3, "days"), config: baseConfig })).toBeNull();
 			});
 		});
 
@@ -263,26 +263,26 @@ describe("Calendar utils tests", () => {
 			it("shows 'Running' for ongoing events", () => {
 				const start = now.clone().subtract(1, "hour");
 				const end = now.clone().add(1, "hour");
-				expect(CalendarUtils.buildRelativeTimeText(makeEvent(start, end), start, end, now, baseConfig, translate)).toBe("Running an hour");
+				expect(CalendarUtils.buildRelativeTimeText({ event: makeEvent(start, end), start, end, now, config: baseConfig, translate })).toBe("Running an hour");
 			});
 
 			it("shows a relative time within getRelative hours", () => {
 				const start = now.clone().add(2, "hours");
 				const end = now.clone().add(3, "hours");
-				expect(CalendarUtils.buildRelativeTimeText(makeEvent(start, end), start, end, now, baseConfig, translate)).toBe("In 2 hours");
+				expect(CalendarUtils.buildRelativeTimeText({ event: makeEvent(start, end), start, end, now, config: baseConfig, translate })).toBe("In 2 hours");
 			});
 
 			it("appends the end time for same-day timed events beyond getRelative", () => {
 				const start = now.clone().add(8, "hours");
 				const end = now.clone().add(9, "hours");
-				const text = CalendarUtils.buildRelativeTimeText(makeEvent(start, end), start, end, now, { ...baseConfig, showEnd: true }, translate);
+				const text = CalendarUtils.buildRelativeTimeText({ event: makeEvent(start, end), start, end, now, config: { ...baseConfig, showEnd: true }, translate });
 				expect(text).toContain(`-${end.format("LT")}`);
 			});
 
 			it("hideTime overrides showEnd for timed events", () => {
 				const start = now.clone().add(8, "hours");
 				const end = now.clone().add(9, "hours");
-				const text = CalendarUtils.buildRelativeTimeText(makeEvent(start, end), start, end, now, { ...baseConfig, showEnd: true, hideTime: true }, translate);
+				const text = CalendarUtils.buildRelativeTimeText({ event: makeEvent(start, end), start, end, now, config: { ...baseConfig, showEnd: true, hideTime: true }, translate });
 				expect(text).not.toContain("-");
 			});
 
@@ -290,20 +290,20 @@ describe("Calendar utils tests", () => {
 				const start = now.clone().startOf("day");
 				const end = start.clone().add(1, "day");
 				const event = makeEvent(start, end, { fullDayEvent: true, today: true });
-				expect(CalendarUtils.buildRelativeTimeText(event, start, end, now, baseConfig, translate)).toBe("Today");
+				expect(CalendarUtils.buildRelativeTimeText({ event, start, end, now, config: baseConfig, translate })).toBe("Today");
 
 				// a multi-day event starting later today shows the range end
 				const laterStart = now.clone().add(1, "hour");
 				const multiDayEnd = start.clone().add(3, "days");
 				const multiDay = makeEvent(laterStart, multiDayEnd, { fullDayEvent: true, today: true });
-				expect(CalendarUtils.buildRelativeTimeText(multiDay, laterStart, multiDayEnd, now, { ...baseConfig, showEnd: true }, translate)).toBe("Today-Jan 3rd");
+				expect(CalendarUtils.buildRelativeTimeText({ event: multiDay, start: laterStart, end: multiDayEnd, now, config: { ...baseConfig, showEnd: true }, translate })).toBe("Today-Jan 3rd");
 			});
 
 			it("skips untranslated day-after-tomorrow label", () => {
 				const start = now.clone().add(2, "days").startOf("day");
 				const end = start.clone().add(1, "day");
 				const event = makeEvent(start, end, { fullDayEvent: true, dayAfterTomorrow: true });
-				expect(CalendarUtils.buildRelativeTimeText(event, start, end, now, baseConfig, translate)).toBe("Thursday");
+				expect(CalendarUtils.buildRelativeTimeText({ event, start, end, now, config: baseConfig, translate })).toBe("Thursday");
 			});
 		});
 
@@ -311,42 +311,42 @@ describe("Calendar utils tests", () => {
 			it("shows the formatted start date for events beyond urgency", () => {
 				const start = now.clone().add(30, "days");
 				const end = start.clone().add(1, "hour");
-				expect(CalendarUtils.buildAbsoluteTimeText(makeEvent(start, end), start, end, now, baseConfig, translate)).toBe("Jan 31st");
+				expect(CalendarUtils.buildAbsoluteTimeText({ event: makeEvent(start, end), start, end, now, config: baseConfig, translate })).toBe("Jan 31st");
 			});
 
 			it("adds start time and end time on the same day when the format has no time", () => {
 				const start = now.clone().add(30, "days");
 				const end = start.clone().add(1, "hour");
-				const text = CalendarUtils.buildAbsoluteTimeText(makeEvent(start, end), start, end, now, { ...baseConfig, showEnd: true }, translate);
+				const text = CalendarUtils.buildAbsoluteTimeText({ event: makeEvent(start, end), start, end, now, config: { ...baseConfig, showEnd: true }, translate });
 				expect(text).toBe(`Jan 31st, ${start.format("LT")}-${end.format("LT")}`);
 			});
 
 			it("omits the end when showEndsOnlyWithDuration is set and the event has no duration", () => {
 				const start = now.clone().add(30, "days");
-				const text = CalendarUtils.buildAbsoluteTimeText(makeEvent(start, start), start, start, now, { ...baseConfig, showEnd: true, showEndsOnlyWithDuration: true }, translate);
+				const text = CalendarUtils.buildAbsoluteTimeText({ event: makeEvent(start, start), start, end: start, now, config: { ...baseConfig, showEnd: true, showEndsOnlyWithDuration: true }, translate });
 				expect(text).toBe("Jan 31st");
 			});
 
 			it("shows 'Running' for ongoing timed events and relative text when urgent", () => {
 				const runningStart = now.clone().subtract(1, "hour");
 				const runningEnd = now.clone().add(1, "hour");
-				expect(CalendarUtils.buildAbsoluteTimeText(makeEvent(runningStart, runningEnd), runningStart, runningEnd, now, baseConfig, translate)).toBe("Running an hour");
+				expect(CalendarUtils.buildAbsoluteTimeText({ event: makeEvent(runningStart, runningEnd), start: runningStart, end: runningEnd, now, config: baseConfig, translate })).toBe("Running an hour");
 
 				const start = now.clone().add(2, "days");
 				const end = start.clone().add(1, "hour");
-				expect(CalendarUtils.buildAbsoluteTimeText(makeEvent(start, end), start, end, now, { ...baseConfig, getRelative: 0 }, translate)).toBe("In 2 days");
+				expect(CalendarUtils.buildAbsoluteTimeText({ event: makeEvent(start, end), start, end, now, config: { ...baseConfig, getRelative: 0 }, translate })).toBe("In 2 days");
 			});
 
 			it("shows the full-day range and relative labels", () => {
 				const start = now.clone().add(30, "days").startOf("day");
 				const end = start.clone().add(2, "days");
 				const event = makeEvent(start, end, { fullDayEvent: true });
-				expect(CalendarUtils.buildAbsoluteTimeText(event, start, end, now, { ...baseConfig, showEnd: true }, translate)).toBe("Jan 31st-Feb 1st");
+				expect(CalendarUtils.buildAbsoluteTimeText({ event, start, end, now, config: { ...baseConfig, showEnd: true }, translate })).toBe("Jan 31st-Feb 1st");
 
 				const today = now.clone().startOf("day");
 				const todayEnd = today.clone().add(1, "day");
 				const todayEvent = makeEvent(today, todayEnd, { fullDayEvent: true, today: true });
-				expect(CalendarUtils.buildAbsoluteTimeText(todayEvent, today, todayEnd, now, { ...baseConfig, nextDaysRelative: true }, translate)).toBe("Today");
+				expect(CalendarUtils.buildAbsoluteTimeText({ event: todayEvent, start: today, end: todayEnd, now, config: { ...baseConfig, nextDaysRelative: true }, translate })).toBe("Today");
 			});
 		});
 	});
@@ -379,7 +379,7 @@ describe("Calendar utils tests", () => {
 			const start = rawStart.clone().locale("en");
 			const end = rawEnd.clone().locale("en");
 			const event = { startDate: start.format("x"), endDate: end.format("x"), fullDayEvent, ...flags };
-			return CalendarUtils[build](event, start, end, moment(), cfg, translate);
+			return CalendarUtils[build]({ event, start, end, now: moment(), config: cfg, translate });
 		};
 
 		beforeEach(() => {
