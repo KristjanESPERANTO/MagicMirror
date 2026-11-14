@@ -221,6 +221,53 @@ describe("Calendar utils tests", () => {
 			});
 		});
 
+		describe("shouldShowTimedEnd", () => {
+			it("requires showEnd and honors showEndsOnlyWithDuration", () => {
+				const withDuration = { startDate: "1", endDate: "2" };
+				const noDuration = { startDate: "1", endDate: "1" };
+				expect(CalendarUtils.shouldShowTimedEnd(withDuration, baseConfig)).toBe(false);
+				expect(CalendarUtils.shouldShowTimedEnd(noDuration, { ...baseConfig, showEnd: true })).toBe(true);
+				expect(CalendarUtils.shouldShowTimedEnd(withDuration, { ...baseConfig, showEnd: true, showEndsOnlyWithDuration: true })).toBe(true);
+				expect(CalendarUtils.shouldShowTimedEnd(noDuration, { ...baseConfig, showEnd: true, showEndsOnlyWithDuration: true })).toBe(false);
+			});
+		});
+
+		describe("getFullDayEndSuffix", () => {
+			const start = now.clone().startOf("day");
+
+			it("returns the last day of a multi-day event", () => {
+				expect(CalendarUtils.getFullDayEndSuffix(start, start.clone().add(3, "days"), { ...baseConfig, showEnd: true })).toBe("-Jan 3rd");
+			});
+
+			it("returns an empty string for single-day events, without showEnd and with showEndsOnlyWithDuration", () => {
+				const config = { ...baseConfig, showEnd: true };
+				expect(CalendarUtils.getFullDayEndSuffix(start, start.clone().add(1, "day"), config)).toBe("");
+				expect(CalendarUtils.getFullDayEndSuffix(start, start.clone().add(3, "days"), baseConfig)).toBe("");
+				expect(CalendarUtils.getFullDayEndSuffix(start, start.clone().add(3, "days"), { ...config, showEndsOnlyWithDuration: true })).toBe("");
+			});
+		});
+
+		describe("getRelativeDayLabel", () => {
+			const flags = ["dayBeforeYesterday", "yesterday", "tomorrow", "dayAfterTomorrow"];
+
+			it("returns the capitalized translation of the first set flag", () => {
+				expect(CalendarUtils.getRelativeDayLabel({ tomorrow: true }, (key) => key.toLowerCase(), flags)).toBe("Tomorrow");
+			});
+
+			it("returns null without a matching flag", () => {
+				expect(CalendarUtils.getRelativeDayLabel({ today: true }, translate, flags)).toBeNull();
+			});
+
+			it("returns null for the optional labels when they are not translated", () => {
+				expect(CalendarUtils.getRelativeDayLabel({ dayBeforeYesterday: true }, translate, flags)).toBeNull();
+				expect(CalendarUtils.getRelativeDayLabel({ dayAfterTomorrow: true }, translate, flags)).toBeNull();
+			});
+
+			it("uses translated optional labels", () => {
+				expect(CalendarUtils.getRelativeDayLabel({ dayBeforeYesterday: true }, () => "Vorgestern", flags)).toBe("Vorgestern");
+			});
+		});
+
 		describe("buildDateHeadersTimeText", () => {
 			it("shows start time only without showEnd", () => {
 				const start = now.clone();
