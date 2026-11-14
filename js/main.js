@@ -178,10 +178,10 @@ const updateDomWithContent = async (module, speed, newHeader, newContent, animat
 		return;
 	}
 
-	await new Promise((resolve) => _hideModule(module, speed / 2, resolve, { animate: animateOut }));
+	await _hideModuleAsync(module, speed / 2, { animate: animateOut });
 	updateModuleContent(module, newHeader, newContent);
 	if (!module.hidden) {
-		await new Promise((resolve) => _showModule(module, speed / 2, resolve, { animate: animateIn }));
+		await _showModuleAsync(module, speed / 2, { animate: animateIn });
 	}
 };
 
@@ -324,6 +324,19 @@ const _hideModule = (module, speed, callback, options = {}) => {
 };
 
 /**
+ * Hide a module and resolve when the animation is complete.
+ * @param {Module} module The module to hide.
+ * @param {number} speed The speed of the hide animation.
+ * @param {object} [options] Optional settings for the hide method.
+ * @returns {Promise<void>} Resolved when the animation is done.
+ */
+const _hideModuleAsync = (module, speed, options = {}) => {
+	return new Promise((resolve) => {
+		_hideModule(module, speed, resolve, options);
+	});
+};
+
+/**
  * Show the module.
  * @param {Module} module The module to show.
  * @param {number} speed The speed of the show animation.
@@ -419,6 +432,29 @@ const _showModule = (module, speed, callback, options = {}) => {
 			callback();
 		}
 	}
+};
+
+/**
+ * Show a module and resolve when the animation is complete.
+ * @param {Module} module The module to show.
+ * @param {number} speed The speed of the show animation.
+ * @param {object} [options] Optional settings for the show method.
+ * @returns {Promise<void>} Resolved when the animation is done.
+ */
+const _showModuleAsync = (module, speed, options = {}) => {
+	return new Promise((resolve, reject) => {
+		const asyncOptions = {
+			...options,
+			onError: (error) => {
+				if (typeof options.onError === "function") {
+					options.onError(error);
+				}
+				reject(error);
+			}
+		};
+
+		_showModule(module, speed, resolve, asyncOptions);
+	});
 };
 
 /**
@@ -706,6 +742,29 @@ export const MM = {
 	showModule (module, speed, callback, options) {
 		// do not change module.hidden yet, only if we really show it later
 		_showModule(module, speed, callback, options);
+	},
+
+	/**
+	 * Hide the module using a Promise-based API.
+	 * @param {Module} module The module to hide.
+	 * @param {number} speed The speed of the hide animation.
+	 * @param {object} [options] Optional settings for the hide method.
+	 * @returns {Promise<void>} Resolved when the animation is done.
+	 */
+	hideModuleAsync (module, speed, options) {
+		module.hidden = true;
+		return _hideModuleAsync(module, speed, options);
+	},
+
+	/**
+	 * Show the module using a Promise-based API.
+	 * @param {Module} module The module to show.
+	 * @param {number} speed The speed of the show animation.
+	 * @param {object} [options] Optional settings for the show method.
+	 * @returns {Promise<void>} Resolved when the animation is done.
+	 */
+	showModuleAsync (module, speed, options) {
+		return _showModuleAsync(module, speed, options);
 	},
 
 	// Return all available module positions.
