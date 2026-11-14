@@ -13,6 +13,7 @@ describe("Compliments module", () => {
 			warn: vi.fn(),
 			error: vi.fn()
 		};
+		global.moment = require("moment");
 		global.Cron = vi.fn();
 
 		// Load the module
@@ -27,6 +28,26 @@ describe("Compliments module", () => {
 
 	afterEach(() => {
 		vi.restoreAllMocks();
+	});
+
+	describe("complimentArray", () => {
+		it("ignores inherited weather keys", () => {
+			const predefinedTypes = [...complimentsModule.pre_defined_types];
+			complimentsModule.currentWeatherType = "__proto__";
+
+			complimentsModule.complimentArray();
+
+			expect(complimentsModule.pre_defined_types).toEqual(predefinedTypes);
+		});
+
+		it("supports a category named hasOwnProperty", () => {
+			complimentsModule.config.compliments = {
+				...complimentsModule.config.compliments,
+				hasOwnProperty: []
+			};
+
+			expect(() => complimentsModule.complimentArray()).not.toThrow();
+		});
 	});
 
 	describe("loadComplimentFile", () => {
