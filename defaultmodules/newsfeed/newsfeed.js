@@ -219,10 +219,10 @@ Module.register("newsfeed", {
 	 * @returns {string} The value of the specified property for the feed.
 	 */
 	getFeedProperty (feed, property) {
-		let res = this.config[property];
+		const configValue = Object.getOwnPropertyDescriptor(this.config, property)?.value;
 		const f = this.config.feeds.find((feedItem) => feedItem.url === feed);
-		if (f && f[property]) res = f[property];
-		return res;
+		const feedValue = f && Object.getOwnPropertyDescriptor(f, property)?.value;
+		return feedValue || configValue;
 	},
 
 	/**
@@ -231,8 +231,7 @@ Module.register("newsfeed", {
 	 */
 	generateFeed (feeds) {
 		let newsItems = [];
-		for (const feed in feeds) {
-			const feedItems = feeds[feed];
+		for (const [feed, feedItems] of Object.entries(feeds)) {
 			if (this.subscribedToFeed(feed)) {
 				for (const item of feedItems) {
 					item.sourceTitle = this.titleForFeed(feed);
