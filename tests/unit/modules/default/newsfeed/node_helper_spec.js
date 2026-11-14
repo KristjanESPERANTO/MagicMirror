@@ -43,7 +43,7 @@ import helper from "../../../../../defaultmodules/newsfeed/node_helper.js";
 
 const loadNewsfeedNodeHelper = () => {
 	mocks.fetcherInstances.length = 0;
-	helper.fetchers = {};
+	helper.start();
 	helper.sendSocketNotification = vi.fn();
 	return { helper, fetcherInstances: mocks.fetcherInstances, loggerMock: mocks.loggerMock };
 };
@@ -81,7 +81,7 @@ describe("newsfeed node_helper", () => {
 
 		expect(fetcherInstances).toHaveLength(1);
 		expect(fetcherInstances[0].startFetch).toHaveBeenCalledTimes(1);
-		expect(helper.fetchers["https://example.com/feed.xml"]).toBe(fetcherInstances[0]);
+		expect(helper.fetchers.get("https://example.com/feed.xml")).toBe(fetcherInstances[0]);
 	});
 
 	it("reuses a fetcher and updates its interval", async () => {
