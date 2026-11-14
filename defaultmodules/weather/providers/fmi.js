@@ -652,8 +652,13 @@ class FMIProvider extends WeatherProvider {
 	 * @returns {string|null} Query parameter value.
 	 */
 	#extractAttributeQueryParameter (xml, elementName, parameterName) {
-		const pattern = new RegExp(`<om:${elementName}\\b[^>]*xlink:href="([^"]+)"`);
-		const href = this.#extract(xml, pattern);
+		let href = null;
+		for (const match of xml.matchAll(/<om:([A-Za-z][A-Za-z0-9._-]*)\b[^>]*xlink:href="([^"]+)"/g)) {
+			if (match[1] === elementName) {
+				href = match[2];
+				break;
+			}
+		}
 
 		if (!href) {
 			return null;

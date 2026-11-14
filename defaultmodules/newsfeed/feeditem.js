@@ -54,8 +54,10 @@ const sanitizeBasicHtml = (html, allowedTags = []) => {
 	}
 
 	// Restore only the exact, attribute-free allowed opening/closing tags after escaping.
-	const restoreAllowedTags = new RegExp(`&lt;(/?(?:${allowedTags.join("|")}))&gt;`, "g");
-	return escaped.replace(restoreAllowedTags, "<$1>");
+	const allowedTagNames = new Set(allowedTags);
+	return escaped.replace(/&lt;(\/?)((?:[a-z][a-z0-9]*))&gt;/g, (match, closing, tagName) => {
+		return allowedTagNames.has(tagName) ? `<${closing}${tagName}>` : match;
+	});
 };
 
 /**
