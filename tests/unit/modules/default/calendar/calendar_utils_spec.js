@@ -1,8 +1,6 @@
 import moment from "moment-timezone";
 import CalendarUtils from "../../../../../defaultmodules/calendar/calendarutils.mjs";
 
-globalThis.moment = moment;
-
 describe("Calendar utils tests", () => {
 	describe("capFirst", () => {
 		const words = {
@@ -34,48 +32,48 @@ describe("Calendar utils tests", () => {
 		});
 
 		it("should return the current system locale when called without timeFormat number", () => {
-			expect(CalendarUtils.getLocaleSpecification()).toEqual({ longDateFormat: { LT: moment.localeData().longDateFormat("LT") } });
+			expect(CalendarUtils.getLocaleSpecification(undefined, moment.localeData())).toEqual({ longDateFormat: { LT: moment.localeData().longDateFormat("LT") } });
 		});
 
 		it("should return a 12-hour longDateFormat when using the 'en' locale", () => {
 			const localeBackup = moment.locale();
 			moment.locale("en");
-			expect(CalendarUtils.getLocaleSpecification()).toEqual({ longDateFormat: { LT: "h:mm A" } });
+			expect(CalendarUtils.getLocaleSpecification(undefined, moment.localeData())).toEqual({ longDateFormat: { LT: "h:mm A" } });
 			moment.locale(localeBackup);
 		});
 
 		it("should return a 12-hour longDateFormat when using the 'au' locale", () => {
 			const localeBackup = moment.locale();
 			moment.locale("au");
-			expect(CalendarUtils.getLocaleSpecification()).toEqual({ longDateFormat: { LT: "h:mm A" } });
+			expect(CalendarUtils.getLocaleSpecification(undefined, moment.localeData())).toEqual({ longDateFormat: { LT: "h:mm A" } });
 			moment.locale(localeBackup);
 		});
 
 		it("should return a 12-hour longDateFormat when using the 'eg' locale", () => {
 			const localeBackup = moment.locale();
 			moment.locale("eg");
-			expect(CalendarUtils.getLocaleSpecification()).toEqual({ longDateFormat: { LT: "h:mm A" } });
+			expect(CalendarUtils.getLocaleSpecification(undefined, moment.localeData())).toEqual({ longDateFormat: { LT: "h:mm A" } });
 			moment.locale(localeBackup);
 		});
 
 		it("should return a 24-hour longDateFormat when using the 'nl' locale", () => {
 			const localeBackup = moment.locale();
 			moment.locale("nl");
-			expect(CalendarUtils.getLocaleSpecification()).toEqual({ longDateFormat: { LT: "HH:mm" } });
+			expect(CalendarUtils.getLocaleSpecification(undefined, moment.localeData())).toEqual({ longDateFormat: { LT: "HH:mm" } });
 			moment.locale(localeBackup);
 		});
 
 		it("should return a 24-hour longDateFormat when using the 'fr' locale", () => {
 			const localeBackup = moment.locale();
 			moment.locale("fr");
-			expect(CalendarUtils.getLocaleSpecification()).toEqual({ longDateFormat: { LT: "HH:mm" } });
+			expect(CalendarUtils.getLocaleSpecification(undefined, moment.localeData())).toEqual({ longDateFormat: { LT: "HH:mm" } });
 			moment.locale(localeBackup);
 		});
 
 		it("should return a 24-hour longDateFormat when using the 'uk' locale", () => {
 			const localeBackup = moment.locale();
 			moment.locale("uk");
-			expect(CalendarUtils.getLocaleSpecification()).toEqual({ longDateFormat: { LT: "HH:mm" } });
+			expect(CalendarUtils.getLocaleSpecification(undefined, moment.localeData())).toEqual({ longDateFormat: { LT: "HH:mm" } });
 			moment.locale(localeBackup);
 		});
 	});

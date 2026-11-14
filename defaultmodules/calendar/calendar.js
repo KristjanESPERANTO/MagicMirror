@@ -105,7 +105,7 @@ Module.register("calendar", {
 		}
 
 		// Set locale.
-		moment.updateLocale(globalThis.config.language, CalendarUtils.getLocaleSpecification(globalThis.config.timeFormat));
+		moment.updateLocale(globalThis.config.language, CalendarUtils.getLocaleSpecification(globalThis.config.timeFormat, moment.localeData()));
 
 		// clear data holder before start
 		this.calendarData = {};
