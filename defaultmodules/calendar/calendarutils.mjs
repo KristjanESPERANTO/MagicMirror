@@ -215,6 +215,69 @@ const CalendarUtils = {
 	},
 
 	/**
+	 * Checks whether the end of a timed event should be shown.
+	 * @param {CalendarEvent} event The calendar event.
+	 * @param {object} config The calendar module config.
+	 * @returns {boolean} True when showEnd is set and the event passes showEndsOnlyWithDuration.
+	 */
+	shouldShowTimedEnd (event, config) {
+		return config.showEnd && (!config.showEndsOnlyWithDuration || CalendarUtils.hasEventDuration(event));
+	},
+
+	/**
+	 * Builds the `-<end date>` suffix of a multi-day full-day event.
+	 * @param {moment.Moment} startMoment The event start.
+	 * @param {moment.Moment} endMoment The exclusive event end.
+	 * @param {object} config The calendar module config.
+	 * @returns {string} The suffix, or an empty string when no end date is shown.
+	 */
+	getFullDayEndSuffix (startMoment, endMoment, config) {
+		if (!config.showEnd || config.showEndsOnlyWithDuration) {
+			return "";
+		}
+		const adjustedEndMoment = CalendarUtils.getAdjustedFullDayEndMoment(endMoment);
+		if (CalendarUtils.isSameDay(startMoment, adjustedEndMoment)) {
+			return "";
+		}
+		return `-${CalendarUtils.capFirst(adjustedEndMoment.format(config.fullDayEventDateFormat))}`;
+	},
+
+	/**
+	 * Resolves the label of an event on a nearby day ("Today", "Tomorrow", ...).
+	 * @param {CalendarEvent} event The calendar event with its relative day flags.
+	 * @param {(key: string) => string} translate The module translate function.
+	 * @param {string[]} flags The event flags to consider, in priority order.
+	 * @returns {string|null} The label, or null when no flag is set or the label is not translated.
+	 */
+	getRelativeDayLabel (event, translate, flags) {
+		const flag = flags.find((name) => event[name]);
+		if (!flag) {
+			return null;
+		}
+		const key = flag.toUpperCase();
+		// Not every language translates these two labels; the translator then returns the key itself.
+		if ((key === "DAYBEFOREYESTERDAY" || key === "DAYAFTERTOMORROW") && translate(key) === key) {
+			return null;
+		}
+		return CalendarUtils.capFirst(translate(key));
+	},
+
+	/**
+	 * Builds the "Running ..." text of an ongoing event.
+	 * @param {moment.Moment} endMoment The event end.
+	 * @param {(key: string, variables?: object) => string} translate The module translate function.
+	 * @returns {string} The running text.
+	 */
+	buildRunningText (endMoment, translate) {
+		return CalendarUtils.capFirst(
+			translate("RUNNING", {
+				fallback: `${translate("RUNNING")} {timeUntilEnd}`,
+				timeUntilEnd: endMoment.fromNow(true)
+			})
+		);
+	},
+
+	/**
 	 * Builds the time cell text for `timeFormat: "dateheaders"`.
 	 * @param {TimeTextContext} context The event and its rendering context.
 	 * @returns {string|null} The time text, or null when the event needs no time cell.
@@ -222,16 +285,12 @@ const CalendarUtils = {
 	buildDateHeadersTimeText (context) {
 		const { event, start: eventStartDateMoment, end: eventEndDateMoment, config } = context;
 		if (event.fullDayEvent) {
-			const adjustedEndMoment = CalendarUtils.getAdjustedFullDayEndMoment(eventEndDateMoment);
-			if (config.showEnd && !config.showEndsOnlyWithDuration && !eventStartDateMoment.isSame(adjustedEndMoment, "d")) {
-				return `-${CalendarUtils.capFirst(adjustedEndMoment.format(config.fullDayEventDateFormat))}`;
-			}
-			return null;
+			return CalendarUtils.getFullDayEndSuffix(eventStartDateMoment, eventEndDateMoment, config) || null;
 		}
 
 		let timeText = eventStartDateMoment.format("LT");
 		// Time-only end avoids redundant date info under a date header.
-		if (config.showEnd && (!config.showEndsOnlyWithDuration || CalendarUtils.hasEventDuration(event))) {
+		if (CalendarUtils.shouldShowTimedEnd(event, config)) {
 			timeText += `-${CalendarUtils.capFirst(eventEndDateMoment.format("LT"))}`;
 		}
 		return timeText;
@@ -246,7 +305,7 @@ const CalendarUtils = {
 		const { event, start: eventStartDateMoment, end: eventEndDateMoment, now, config, translate } = context;
 		let timeText = CalendarUtils.capFirst(eventStartDateMoment.format(config.dateFormat));
 
-		if (config.showEnd && (!config.showEndsOnlyWithDuration || CalendarUtils.hasEventDuration(event))) {
+		if (CalendarUtils.shouldShowTimedEnd(event, config)) {
 			const sameDay = CalendarUtils.isSameDay(eventStartDateMoment, eventEndDateMoment);
 			if (sameDay && !CalendarUtils.dateFormatIncludesTime(config.dateFormat, eventStartDateMoment.localeData())) {
 				timeText += `, ${eventStartDateMoment.format("LT")}`;
@@ -255,33 +314,19 @@ const CalendarUtils = {
 		}
 
 		if (event.fullDayEvent) {
-			const adjustedEndMoment = CalendarUtils.getAdjustedFullDayEndMoment(eventEndDateMoment);
+			const endSuffix = CalendarUtils.getFullDayEndSuffix(eventStartDateMoment, eventEndDateMoment, config);
 			timeText = CalendarUtils.capFirst(eventStartDateMoment.format(config.fullDayEventDateFormat));
 
-			if (config.showEnd && !config.showEndsOnlyWithDuration && !eventStartDateMoment.isSame(adjustedEndMoment, "d")) {
-				timeText += `-${CalendarUtils.capFirst(adjustedEndMoment.format(config.fullDayEventDateFormat))}`;
-			} else if (!eventStartDateMoment.isSame(adjustedEndMoment, "d") && eventStartDateMoment.isBefore(now)) {
+			if (endSuffix) {
+				timeText += endSuffix;
+			} else if (!CalendarUtils.isSameDay(eventStartDateMoment, CalendarUtils.getAdjustedFullDayEndMoment(eventEndDateMoment)) && eventStartDateMoment.isBefore(now)) {
 				timeText = CalendarUtils.capFirst(now.format(config.fullDayEventDateFormat));
 			}
 
 			if (config.nextDaysRelative) {
-				let relativeLabel = false;
-				if (event.today) {
-					timeText = CalendarUtils.capFirst(translate("TODAY"));
-					relativeLabel = true;
-				} else if (event.yesterday) {
-					timeText = CalendarUtils.capFirst(translate("YESTERDAY"));
-					relativeLabel = true;
-				} else if (event.tomorrow) {
-					timeText = CalendarUtils.capFirst(translate("TOMORROW"));
-					relativeLabel = true;
-				} else if (event.dayAfterTomorrow && translate("DAYAFTERTOMORROW") !== "DAYAFTERTOMORROW") {
-					timeText = CalendarUtils.capFirst(translate("DAYAFTERTOMORROW"));
-					relativeLabel = true;
-				}
-
-				if (relativeLabel && config.showEnd && !config.showEndsOnlyWithDuration && !eventStartDateMoment.isSame(adjustedEndMoment, "d")) {
-					timeText += `-${CalendarUtils.capFirst(adjustedEndMoment.format(config.fullDayEventDateFormat))}`;
+				const label = CalendarUtils.getRelativeDayLabel(event, translate, ["today", "yesterday", "tomorrow", "dayAfterTomorrow"]);
+				if (label) {
+					timeText = label + endSuffix;
 				}
 			}
 
@@ -289,12 +334,7 @@ const CalendarUtils = {
 		}
 
 		if (config.getRelative > 0 && eventStartDateMoment.isBefore(now)) {
-			return CalendarUtils.capFirst(
-				translate("RUNNING", {
-					fallback: `${translate("RUNNING")} {timeUntilEnd}`,
-					timeUntilEnd: eventEndDateMoment.fromNow(true)
-				})
-			);
+			return CalendarUtils.buildRunningText(eventEndDateMoment, translate);
 		}
 
 		if (config.urgency > 0 && eventStartDateMoment.diff(now, "d") < config.urgency) {
@@ -311,71 +351,53 @@ const CalendarUtils = {
 	 */
 	buildRelativeTimeText (context) {
 		const { event, start: eventStartDateMoment, end: eventEndDateMoment, now, config, translate, log = silentLog } = context;
-		if (eventStartDateMoment.isSameOrAfter(now) || (event.fullDayEvent && eventEndDateMoment.diff(now, "days") === 0)) {
-			let timeText;
-
-			if (!config.hideTime && !event.fullDayEvent) {
-				log.debug("[calendar] event not hidden and not fullday");
-				timeText = `${CalendarUtils.capFirst(eventStartDateMoment.calendar(null, { sameElse: config.dateFormat }))}`;
-			} else {
-				log.debug("[calendar] event full day or hidden");
-				timeText = `${CalendarUtils.capFirst(
-					eventStartDateMoment.calendar(null, {
-						sameDay: config.showTimeToday ? "LT" : `[${translate("TODAY")}]`,
-						nextDay: `[${translate("TOMORROW")}]`,
-						nextWeek: "dddd",
-						sameElse: event.fullDayEvent ? config.fullDayEventDateFormat : config.dateFormat
-					})
-				)}`;
-			}
-
-			if (event.fullDayEvent) {
-				if (event.today || (event.fullDayEvent && eventEndDateMoment.diff(now, "days") === 0)) {
-					timeText = CalendarUtils.capFirst(translate("TODAY"));
-				} else if (event.dayBeforeYesterday) {
-					if (translate("DAYBEFOREYESTERDAY") !== "DAYBEFOREYESTERDAY") {
-						timeText = CalendarUtils.capFirst(translate("DAYBEFOREYESTERDAY"));
-					}
-				} else if (event.yesterday) {
-					timeText = CalendarUtils.capFirst(translate("YESTERDAY"));
-				} else if (event.tomorrow) {
-					timeText = CalendarUtils.capFirst(translate("TOMORROW"));
-				} else if (event.dayAfterTomorrow) {
-					if (translate("DAYAFTERTOMORROW") !== "DAYAFTERTOMORROW") {
-						timeText = CalendarUtils.capFirst(translate("DAYAFTERTOMORROW"));
-					}
-				}
-
-				if (config.showEnd && !config.showEndsOnlyWithDuration) {
-					const adjustedEndMoment = CalendarUtils.getAdjustedFullDayEndMoment(eventEndDateMoment);
-					if (!eventStartDateMoment.isSame(adjustedEndMoment, "d")) {
-						timeText += `-${CalendarUtils.capFirst(adjustedEndMoment.format(config.fullDayEventDateFormat))}`;
-					}
-				}
-
-				log.info("[calendar] event fullday");
-			} else if (eventStartDateMoment.diff(now, "h") < config.getRelative) {
-				log.info("[calendar] not full day but within getRelative size");
-				timeText = `${CalendarUtils.capFirst(eventStartDateMoment.fromNow())}`;
-			} else if (!config.hideTime && config.showEnd && (!config.showEndsOnlyWithDuration || CalendarUtils.hasEventDuration(event))) {
-				if (CalendarUtils.isSameDay(eventStartDateMoment, eventEndDateMoment)) {
-					const sameElseFormat = CalendarUtils.dateFormatIncludesTime(config.dateFormat, eventStartDateMoment.localeData()) ? config.dateFormat : `${config.dateFormat}, LT`;
-					timeText = CalendarUtils.capFirst(
-						eventStartDateMoment.calendar(null, { sameElse: sameElseFormat })
-					);
-				}
-				timeText += `-${CalendarUtils.formatTimedEventEnd(eventStartDateMoment, eventEndDateMoment, config.dateEndFormat)}`;
-			}
-
-			return timeText;
+		const isUpcomingOrToday = eventStartDateMoment.isSameOrAfter(now) || (event.fullDayEvent && eventEndDateMoment.diff(now, "days") === 0);
+		if (!isUpcomingOrToday) {
+			return CalendarUtils.buildRunningText(eventEndDateMoment, translate);
 		}
 
-		return CalendarUtils.capFirst(
-			translate("RUNNING", {
-				fallback: `${translate("RUNNING")} {timeUntilEnd}`,
-				timeUntilEnd: eventEndDateMoment.fromNow(true)
-			})
-		);
+		let timeText;
+
+		if (!config.hideTime && !event.fullDayEvent) {
+			log.debug("[calendar] event not hidden and not fullday");
+			timeText = `${CalendarUtils.capFirst(eventStartDateMoment.calendar(null, { sameElse: config.dateFormat }))}`;
+		} else {
+			log.debug("[calendar] event full day or hidden");
+			timeText = `${CalendarUtils.capFirst(
+				eventStartDateMoment.calendar(null, {
+					sameDay: config.showTimeToday ? "LT" : `[${translate("TODAY")}]`,
+					nextDay: `[${translate("TOMORROW")}]`,
+					nextWeek: "dddd",
+					sameElse: event.fullDayEvent ? config.fullDayEventDateFormat : config.dateFormat
+				})
+			)}`;
+		}
+
+		if (event.fullDayEvent) {
+			const isToday = event.today || eventEndDateMoment.diff(now, "days") === 0;
+			const label = isToday
+				? CalendarUtils.capFirst(translate("TODAY"))
+				: CalendarUtils.getRelativeDayLabel(event, translate, ["dayBeforeYesterday", "yesterday", "tomorrow", "dayAfterTomorrow"]);
+			if (label) {
+				timeText = label;
+			}
+			timeText += CalendarUtils.getFullDayEndSuffix(eventStartDateMoment, eventEndDateMoment, config);
+
+			log.info("[calendar] event fullday");
+		} else if (eventStartDateMoment.diff(now, "h") < config.getRelative) {
+			log.info("[calendar] not full day but within getRelative size");
+			timeText = `${CalendarUtils.capFirst(eventStartDateMoment.fromNow())}`;
+		} else if (!config.hideTime && CalendarUtils.shouldShowTimedEnd(event, config)) {
+			if (CalendarUtils.isSameDay(eventStartDateMoment, eventEndDateMoment)) {
+				const sameElseFormat = CalendarUtils.dateFormatIncludesTime(config.dateFormat, eventStartDateMoment.localeData()) ? config.dateFormat : `${config.dateFormat}, LT`;
+				timeText = CalendarUtils.capFirst(
+					eventStartDateMoment.calendar(null, { sameElse: sameElseFormat })
+				);
+			}
+			timeText += `-${CalendarUtils.formatTimedEventEnd(eventStartDateMoment, eventEndDateMoment, config.dateEndFormat)}`;
+		}
+
+		return timeText;
 	}
 };
 
