@@ -1,10 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { async as icalAsync } from "node-ical";
 import moment from "moment-timezone";
-
-globalThis.moment = moment;
-const { CalendarFetcherUtils } = await import("../../../../../defaultmodules/calendar/calendarfetcherutils.js");
-const { CalendarFetcher } = await import("../../../../../defaultmodules/calendar/calendarfetcher.js");
+import { CalendarFetcherUtils } from "../../../../../defaultmodules/calendar/calendarfetcherutils.js";
+import { CalendarFetcher } from "../../../../../defaultmodules/calendar/calendarfetcher.js";
 
 const makeFetcher = (options = {}) => new CalendarFetcher(
 	options.url ?? "http://test.example.com/cal.ics",
