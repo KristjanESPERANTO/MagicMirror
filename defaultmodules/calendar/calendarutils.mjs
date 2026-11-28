@@ -41,9 +41,10 @@ const CalendarUtils = {
 	 * corresponding time-format to be used in the calendar display. If no number is given (or otherwise invalid input)
 	 * it will a localeSpecification object with the system locale time format.
 	 * @param {number} timeFormat Specifies either 12 or 24-hour time format
+	 * @param {moment.Locale} localeData Locale providing the system time format, used when timeFormat is neither 12 nor 24
 	 * @returns {moment.LocaleSpecification} formatted time
 	 */
-	getLocaleSpecification (timeFormat) {
+	getLocaleSpecification (timeFormat, localeData) {
 		switch (timeFormat) {
 			case 12: {
 				return { longDateFormat: { LT: "h:mm A" } };
@@ -52,7 +53,7 @@ const CalendarUtils = {
 				return { longDateFormat: { LT: "HH:mm" } };
 			}
 			default: {
-				return { longDateFormat: { LT: globalThis.moment.localeData().longDateFormat("LT") } };
+				return { longDateFormat: { LT: localeData.longDateFormat("LT") } };
 			}
 		}
 	},
