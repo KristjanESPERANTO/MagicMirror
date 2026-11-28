@@ -43,7 +43,11 @@ export default NodeHelper.create({
 			new URL(url);
 		} catch (error) {
 			Log.error("Malformed calendar url: ", url, error);
-			this.sendSocketNotification("CALENDAR_ERROR", { error_type: "MODULE_ERROR_MALFORMED_URL" });
+			this.sendSocketNotification("CALENDAR_ERROR", {
+				id: identifier,
+				url,
+				error_type: "MODULE_ERROR_MALFORMED_URL"
+			});
 			return;
 		}
 
@@ -65,6 +69,7 @@ export default NodeHelper.create({
 				Log.error("Calendar Error. Could not fetch calendar: ", fetcher.url, errorInfo.message || errorInfo);
 				this.sendSocketNotification("CALENDAR_ERROR", {
 					id: identifier,
+					url: fetcher.url,
 					error_type: errorInfo.translationKey
 				});
 			});
