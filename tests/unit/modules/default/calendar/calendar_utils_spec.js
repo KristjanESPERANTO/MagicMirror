@@ -192,7 +192,6 @@ describe("Calendar utils tests", () => {
 		});
 
 		beforeEach(() => {
-			globalThis.Log = { debug () {}, info () {} };
 			// moment's fromNow() reads the system clock, not the `now` argument
 			vi.useFakeTimers({ toFake: ["Date"] });
 			vi.setSystemTime(now.toDate());
@@ -200,18 +199,17 @@ describe("Calendar utils tests", () => {
 
 		afterEach(() => {
 			vi.useRealTimers();
-			Reflect.deleteProperty(globalThis, "Log");
 		});
 
 		describe("dateFormatIncludesTime", () => {
 			it("detects time tokens, also via locale tokens", () => {
-				expect(CalendarUtils.dateFormatIncludesTime("MMM Do, HH:mm")).toBe(true);
-				expect(CalendarUtils.dateFormatIncludesTime("lll")).toBe(true);
+				expect(CalendarUtils.dateFormatIncludesTime("MMM Do, HH:mm", now.localeData())).toBe(true);
+				expect(CalendarUtils.dateFormatIncludesTime("lll", now.localeData())).toBe(true);
 			});
 
 			it("ignores literals and date-only formats", () => {
-				expect(CalendarUtils.dateFormatIncludesTime("MMM Do")).toBe(false);
-				expect(CalendarUtils.dateFormatIncludesTime("[at] MMM Do")).toBe(false);
+				expect(CalendarUtils.dateFormatIncludesTime("MMM Do", now.localeData())).toBe(false);
+				expect(CalendarUtils.dateFormatIncludesTime("[at] MMM Do", now.localeData())).toBe(false);
 			});
 		});
 
@@ -260,6 +258,15 @@ describe("Calendar utils tests", () => {
 		});
 
 		describe("buildRelativeTimeText", () => {
+			it("reports the taken branch to the given logger", () => {
+				const log = { debug: vi.fn(), info: vi.fn() };
+				const start = now.clone().add(2, "hours");
+				const end = now.clone().add(3, "hours");
+				CalendarUtils.buildRelativeTimeText({ event: makeEvent(start, end), start, end, now, config: baseConfig, translate, log });
+				expect(log.debug).toHaveBeenCalledWith("[calendar] event not hidden and not fullday");
+				expect(log.info).toHaveBeenCalledWith("[calendar] not full day but within getRelative size");
+			});
+
 			it("shows 'Running' for ongoing events", () => {
 				const start = now.clone().subtract(1, "hour");
 				const end = now.clone().add(1, "hour");
@@ -383,7 +390,6 @@ describe("Calendar utils tests", () => {
 		};
 
 		beforeEach(() => {
-			globalThis.Log = { debug () {}, info () {} };
 			originalEnglishTimeFormat = moment.localeData("en").longDateFormat("LT");
 			moment.updateLocale("en", { longDateFormat: { LT: "HH:mm" } });
 			vi.useFakeTimers({ toFake: ["Date"] });
@@ -392,7 +398,6 @@ describe("Calendar utils tests", () => {
 		afterEach(() => {
 			vi.useRealTimers();
 			moment.updateLocale("en", { longDateFormat: { LT: originalEnglishTimeFormat } });
-			Reflect.deleteProperty(globalThis, "Log");
 		});
 
 		it.each([
