@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const UpdateHelper = vi.hoisted(() => vi.fn());
@@ -32,7 +33,7 @@ describe("updatenotification node helper", () => {
 	it("uses server configuration for update commands", async () => {
 		const trustedUpdates = [{ "MMM-Test": "git pull" }];
 		const { helper, UpdateHelper } = await loadNodeHelper({
-			modules: [{ module: "updatenotification", config: { updates: trustedUpdates, updateTimeout: 2000 } }]
+			modules: [{ module: "updatenotification", config: { updates: trustedUpdates, updateTimeout: 2000, updateInterval: 2000 } }]
 		});
 		const clientConfig = { updates: [{ "MMM-Test": "rm -rf /" }], updateInterval: 1000, updateTimeout: 1 };
 
@@ -41,7 +42,7 @@ describe("updatenotification node helper", () => {
 		const [updateConfig] = UpdateHelper.mock.calls[0];
 		expect(updateConfig.updates).toEqual(trustedUpdates);
 		expect(updateConfig.updateTimeout).toBe(2000);
-		expect(updateConfig.updateInterval).toBe(1000);
+		expect(updateConfig.updateInterval).toBe(2000);
 	});
 
 	it("ignores client update commands when the server config has none", async () => {
@@ -54,7 +55,7 @@ describe("updatenotification node helper", () => {
 
 		const [updateConfig] = UpdateHelper.mock.calls[0];
 		expect(updateConfig.updates).toEqual([]);
-		expect(updateConfig.updateInterval).toBe(1000);
+		expect(updateConfig.updateInterval).toBe(10 * 60 * 1000);
 	});
 
 	it("ignores client update commands when the module is not configured", async () => {
@@ -65,7 +66,19 @@ describe("updatenotification node helper", () => {
 
 		const [updateConfig] = UpdateHelper.mock.calls[0];
 		expect(updateConfig.updates).toEqual([]);
-		expect(updateConfig.updateInterval).toBe(1000);
+		expect(updateConfig.updateInterval).toBe(10 * 60 * 1000);
+	});
+
+	it("warns when a module does not provide extracted defaults", async () => {
+		const { helper } = await loadNodeHelper({ modules: [] });
+		// Native require shares the instance that js/node_helper.js gets for "logger".
+		const Log = createRequire(import.meta.url)("../../../../../js/logger.js");
+		const warn = vi.spyOn(Log, "warn").mockImplementation(() => {});
+		helper.name = "not-migrated";
+
+		helper.getServerModuleConfig();
+
+		expect(warn).toHaveBeenCalledWith("Module not-migrated should provide extracted defaults in defaults.mjs.");
 	});
 
 	it("processes updates with the update helper", async () => {
